@@ -1,0 +1,79 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+const layoutListeners = new Set();
+const titleListeners = new Set();
+const compactListeners = new Set();
+const captionListeners = new Set();
+const chatStateListeners = new Set();
+const authStateListeners = new Set();
+ipcRenderer.on('document:layout-needed', () => {
+  for (const listener of layoutListeners) listener();
+});
+ipcRenderer.on('document:title', (_event, title) => {
+  for (const listener of titleListeners) listener(title);
+});
+ipcRenderer.on('window:compact-changed', (_event, compact) => {
+  for (const listener of compactListeners) listener(compact);
+});
+ipcRenderer.on('captions:event', (_event, payload) => {
+  for (const listener of captionListeners) listener(payload);
+});
+ipcRenderer.on('chat:state', (_event, state) => {
+  for (const listener of chatStateListeners) listener(state);
+});
+ipcRenderer.on('auth:state', (_event, state) => {
+  for (const listener of authStateListeners) listener(state);
+});
+
+contextBridge.exposeInMainWorld('privacy', {
+  capability: () => ipcRenderer.invoke('privacy:capability'),
+  unlockAfterRemoteCheck: (verified) =>
+    ipcRenderer.invoke('privacy:unlock-after-remote-check', verified),
+  lockContent: () => ipcRenderer.invoke('privacy:lock-content'),
+  setOpacity: (opacity) => ipcRenderer.invoke('overlay:set-opacity', opacity),
+  toggleCompact: () => ipcRenderer.invoke('window:toggle-compact'),
+  captionConfiguration: () => ipcRenderer.invoke('captions:configuration'),
+  startCaptions: (options) => ipcRenderer.invoke('captions:start', options),
+  stopCaptions: () => ipcRenderer.invoke('captions:stop'),
+  // Downloads, verifies, then speed-checks a model; progress arrives as captions events.
+  downloadModel: (id) => ipcRenderer.invoke('models:download', id),
+  cancelModelDownload: (id) => ipcRenderer.invoke('models:cancel', id),
+  controlWindow: (action) => ipcRenderer.invoke('window:control', action),
+  loadPublicDocument: (url) => ipcRenderer.invoke('document:load-public', url),
+  setDocumentBounds: (bounds) => ipcRenderer.invoke('document:set-bounds', bounds),
+  reloadDocument: () => ipcRenderer.invoke('document:reload'),
+  openDocumentExternal: () => ipcRenderer.invoke('document:open-external'),
+  // ChatGPT browser view and live-caption injection.
+  ensureChat: () => ipcRenderer.invoke('chat:ensure'),
+  setChatBounds: (bounds) => ipcRenderer.invoke('chat:set-bounds', bounds),
+  reloadChat: () => ipcRenderer.invoke('chat:reload'),
+  newChat: () => ipcRenderer.invoke('chat:home'),
+  openChatExternal: () => ipcRenderer.invoke('chat:open-external'),
+  setChatComposer: (text) => ipcRenderer.invoke('chat:set-composer', text),
+  onChatState: (listener) => {
+    if (typeof listener === 'function') chatStateListeners.add(listener);
+  },
+  onDocumentLayoutNeeded: (listener) => {
+    if (typeof listener === 'function') layoutListeners.add(listener);
+  },
+  onDocumentTitle: (listener) => {
+    if (typeof listener === 'function') titleListeners.add(listener);
+  },
+  onCompactChanged: (listener) => {
+    if (typeof listener === 'function') compactListeners.add(listener);
+  },
+  onCaptionsEvent: (listener) => {
+    if (typeof listener === 'function') captionListeners.add(listener);
+  },
+});
+
+contextBridge.exposeInMainWorld('auth', {
+  getState: () => ipcRenderer.invoke('auth:get-state'),
+  signInGoogle: () => ipcRenderer.invoke('auth:signin-google'),
+  signInDev: (email, name) => ipcRenderer.invoke('auth:signin-dev', { email, name }),
+  signOut: () => ipcRenderer.invoke('auth:signout'),
+  recheck: () => ipcRenderer.invoke('auth:recheck'),
+  onAuthState: (listener) => {
+    if (typeof listener === 'function') authStateListeners.add(listener);
+  },
+});

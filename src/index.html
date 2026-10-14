@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; font-src 'self'" />
+    <title>A2solveX · Meeting Assistant</title>
+    <link rel="stylesheet" href="../node_modules/@phosphor-icons/web/src/regular/style.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="app-shell">
+      <header class="topbar">
+        <div class="brand" aria-label="A2solveX">
+          <span class="brand-mark">A2</span><span class="brand-name">A2solve<span class="brand-x">X</span></span>
+        </div>
+        <span class="top-divider" aria-hidden="true"></span>
+        <div class="top-spacer"></div>
+        <button id="profile-button" class="window-button profile-button" type="button" title="Local session" aria-label="Local session"><i class="ph ph-user-circle" aria-hidden="true"></i></button>
+        <div id="profile-menu" class="profile-menu" hidden><strong>Local session</strong><span id="profile-status">Google Docs access follows the shared link.</span></div>
+        <span class="top-divider account-divider" aria-hidden="true"></span>
+        <div class="window-controls">
+          <button id="minimize-button" class="window-button" type="button" aria-label="Compact bar"><i class="ph ph-minus" aria-hidden="true"></i></button>
+          <button class="window-button close-button" data-window="close" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+        </div>
+      </header>
+
+      <div class="workspace-layout">
+        <aside class="sidebar">
+          <div class="sidebar-label">WORKSPACE</div>
+          <nav class="workspace-nav" aria-label="Workspace">
+            <button class="nav-item active" data-view="document" type="button"><i class="ph ph-file-text" aria-hidden="true"></i><span>Google Doc</span><kbd>Ctrl 1</kbd></button>
+            <button class="nav-item" data-view="captions" type="button"><i class="ph ph-closed-captioning" aria-hidden="true"></i><span>Captions</span><kbd>Ctrl 2</kbd></button>
+            <button class="nav-item" data-view="ai" type="button"><i class="ph ph-chat-circle-dots" aria-hidden="true"></i><span>ChatGPT</span><kbd>Ctrl 3</kbd></button>
+          </nav>
+          <div class="sidebar-bottom">
+            <button id="audio-card" class="audio-card" type="button">
+              <span class="audio-state-dot"></span>
+              <span class="audio-copy"><strong>Audio off</strong><small>Start it from Captions</small></span>
+              <i class="ph ph-microphone-slash" aria-hidden="true"></i>
+            </button>
+            <label class="opacity-control" for="opacity"><span>Overlay opacity</span><strong id="opacity-value">94%</strong><input id="opacity" type="range" min="55" max="100" value="94" /></label>
+          </div>
+        </aside>
+
+        <section class="main-content">
+          <header class="content-toolbar">
+            <div class="document-identity">
+              <span id="content-icon" class="content-icon"><i class="ph ph-file-text" aria-hidden="true"></i></span>
+              <div class="identity-copy"><h1 id="content-title">[Document title]</h1><p><span class="sync-dot"></span><span id="content-subtitle">Google Doc · Waiting for link</span></p></div>
+            </div>
+            <form id="document-form" class="document-controls">
+              <label class="url-field"><i class="ph ph-link" aria-hidden="true"></i><input id="document-url" type="url" placeholder="Paste a Google Doc link" aria-label="Google Docs link" autocomplete="off" /></label>
+              <button id="open-document" class="primary-button" type="submit">Open</button>
+              <button id="reload-document" class="icon-button" type="button" title="Refresh document" aria-label="Refresh document" disabled><i class="ph ph-arrows-clockwise" aria-hidden="true"></i></button>
+              <button id="external-document" class="icon-button" type="button" title="Open in browser" aria-label="Open in browser" disabled><i class="ph ph-arrow-square-out" aria-hidden="true"></i></button>
+            </form>
+            <div id="chat-controls" class="document-controls chat-controls" hidden>
+              <span id="chat-caption-status" class="status-chip"><span class="audio-state-dot"></span>Audio off</span>
+              <button id="chat-start-captions" class="primary-button" type="button" title="Start or stop local caption listening">Start captions</button>
+              <label id="feed-toggle" class="feed-toggle" title="Fill ChatGPT's message box with finished captions. Nothing is sent automatically.">
+                <input id="feed-captions" type="checkbox" />
+                <i class="ph ph-closed-captioning" aria-hidden="true"></i>
+                <span>Feed captions → prompt</span>
+              </label>
+              <button id="new-chat" class="icon-button" type="button" title="New chat" aria-label="New chat"><i class="ph ph-plus" aria-hidden="true"></i></button>
+              <button id="reload-chat" class="icon-button" type="button" title="Reload ChatGPT" aria-label="Reload ChatGPT"><i class="ph ph-arrows-clockwise" aria-hidden="true"></i></button>
+              <button id="external-chat" class="icon-button" type="button" title="Open in browser" aria-label="Open in browser"><i class="ph ph-arrow-square-out" aria-hidden="true"></i></button>
+            </div>
+          </header>
+
+          <section id="document-view" class="content-view">
+            <div class="document-stage">
+              <article id="document-canvas" class="document-canvas" aria-label="Google Docs display">
+                <div id="document-fallback" class="document-fallback">
+                  <h2>[Document title]</h2>
+                  <p class="document-meta">Last edited [date] · [owner]</p>
+                  <h3>Overview</h3>
+                  <p>[A short summary of what this document covers.]</p>
+                  <h3>Notes</h3>
+                  <ul><li>[First note]</li><li>[Second note]</li><li>[Third note]</li></ul>
+                  <h3>Action items</h3>
+                  <p class="task-line"><span class="task-check"></span>[Task] — [owner], due [date]</p>
+                  <p class="task-line"><span class="task-check"></span>[Task] — [owner], due [date]</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section id="captions-view" class="content-view auxiliary-view" hidden>
+            <div class="aux-heading"><div><span class="aux-kicker">LIVE MEETING</span><h1>Captions</h1></div><div class="caption-actions"><span id="caption-status" class="status-chip"><span class="audio-state-dot"></span>Audio off</span><button id="start-captions" class="primary-button" type="button">Start captions</button></div></div>
+            <div class="caption-tools">
+              <details id="caption-settings" class="caption-settings"><summary>Caption settings <i class="ph ph-caret-down" aria-hidden="true"></i></summary>
+                <fieldset id="caption-options"><legend>English · All recognition runs on this PC</legend>
+                  <p class="caption-setting-label">Speech model · downloaded once, best first</p><div id="caption-engine-options" class="caption-choices"></div>
+                  <p class="caption-setting-label">Playback output</p><div id="caption-device-options" class="caption-choices"></div>
+                  <p class="caption-settings-note">Captures sound played through the selected output. Your microphone is not used. Stop captions to change these settings.</p>
+                </fieldset>
+              </details>
+              <div class="caption-signal"><span id="caption-source">System default output</span><meter id="caption-meter" min="0" max="60" value="0" aria-label="System audio level"></meter></div>
+              <button id="clear-captions" class="secondary-button" type="button">Clear</button>
+            </div>
+            <p id="caption-notice" class="caption-notice" role="status" hidden></p>
+            <div id="caption-transcript" class="caption-transcript" aria-live="polite" aria-label="Live captions"><p class="caption-placeholder">Play a meeting, video, or any other audio, then start captions.<br>English speech · Fully local · No usage fees</p></div>
+            <p id="caption-performance" class="caption-performance">Audio and captions stay on this PC. Audio is not saved.</p>
+          </section>
+
+          <section id="ai-view" class="content-view" hidden>
+            <div class="document-stage">
+              <article id="chat-canvas" class="document-canvas chat-canvas" aria-label="ChatGPT display">
+                <div id="chat-fallback" class="document-fallback chat-fallback">
+                  <h2>ChatGPT</h2>
+                  <p class="document-meta">Opens inside this protected, screen-share-excluded overlay</p>
+                  <p>Sign in to ChatGPT here once — the session is remembered. Then turn on <strong>Feed captions → prompt</strong> and your live meeting captions fill the message box as they are recognized.</p>
+                  <p>Review the text and press <strong>Send</strong> in ChatGPT when you want to ask. Captions never send on their own.</p>
+                  <p class="chat-loading" id="chat-loading" hidden>Opening ChatGPT…</p>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <div id="auth-gate" class="auth-gate" hidden>
+      <div class="auth-gate-top">
+        <div class="brand" aria-label="A2solveX"><span class="brand-mark">A2</span><span class="brand-name">A2solve<span class="brand-x">X</span></span></div>
+        <div class="auth-top-actions">
+          <button id="gate-compact" class="window-button" type="button" title="Compact bar" aria-label="Compact bar"><i class="ph ph-minus" aria-hidden="true"></i></button>
+          <button id="gate-close" class="window-button close-button" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="auth-card">
+        <div class="auth-icon" id="gate-icon"><i class="ph ph-spinner-gap" aria-hidden="true"></i></div>
+        <h1 id="gate-title">Checking access…</h1>
+        <p id="gate-message" class="gate-message">Connecting to the access server…</p>
+        <div id="gate-actions" class="gate-actions"></div>
+        <p id="gate-foot" class="gate-foot"></p>
+      </div>
+    </div>
+
+    <script src="caption-feed.js"></script>
+    <script src="renderer.js"></script>
+    <script src="caption-renderer.js"></script>
+    <script src="auth-gate.js"></script>
+  </body>
+</html>

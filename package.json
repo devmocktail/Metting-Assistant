@@ -1,0 +1,60 @@
+{
+  "name": "private-meeting-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local meeting assistance overlay with explicit screen capture privacy status.",
+  "author": "A2solveX",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:captions": "powershell -ExecutionPolicy Bypass -File scripts/build-captions.ps1",
+    "build:worker": "powershell -ExecutionPolicy Bypass -File scripts/build-worker.ps1",
+    "build:icon": "node node_modules/electron/cli.js scripts/make-icon.cjs",
+    "dist": "npm run build:captions && npm run build:worker && electron-builder --win nsis --x64",
+    "build:captions-windows-ai": "powershell -ExecutionPolicy Bypass -File scripts/build-captions-windows-ai.ps1",
+    "setup:windows-ai-identity": "winapp node add-electron-debug-identity",
+    "remove:windows-ai-identity": "winapp node clear-electron-debug-identity",
+    "setup:captions-model": "powershell -ExecutionPolicy Bypass -File scripts/setup-captions-model.ps1",
+    "setup:captions-local": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-captions.ps1",
+    "test:captions": ".venv-captions\\Scripts\\python.exe -m unittest discover -s native/captions-local -p test_*.py",
+    "test:models": "node --test scripts/models-test.cjs",
+    "test:captions-lifecycle": "node scripts/lifecycle-captions.cjs",
+    "test:captions-smoke": "node node_modules/electron/cli.js scripts/smoke-captions.cjs artifacts/captions/jfk.wav"
+  },
+  "build": {
+    "appId": "com.a2solvex.meetingassistant",
+    "productName": "A2solveX Meeting Assistant",
+    "directories": { "output": "dist", "buildResources": "build-resources" },
+    "electronDist": "node_modules/electron/dist",
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!node_modules/@phosphor-icons/web/src/{bold,duotone,fill,light,thin}/**"
+    ],
+    "extraResources": [
+      { "from": "native/captions/target/release/audio-capture.exe", "to": "captions/audio-capture.exe" },
+      { "from": "build/worker-dist/caption-worker", "to": "captions/worker" },
+      { "from": "resources/speech-check.wav", "to": "captions/speech-check.wav" }
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build-resources/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "A2solveX-Meeting-Assistant-Setup-${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "@microsoft/winappcli": "^0.7.1",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "@phosphor-icons/web": "^2.1.2"
+  }
+}
