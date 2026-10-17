@@ -266,15 +266,20 @@ function setChatBounds(bounds) {
 
 // --- authentication / gating ---
 
+// The deployed gating backend. Installed copies connect here by default so a
+// downloaded build "just works"; override per machine with MEETING_BACKEND_URL
+// or a userData/backend.json. Change this one line if the backend moves domains.
+const DEFAULT_BACKEND_URL = 'https://mediumturquoise-pheasant-734020.hostingersite.com';
+
 // Where the gating backend lives: env override, then a userData/backend.json
-// file the user can edit after deploy, then the local dev default.
+// file, then the baked default (localhost while developing from source).
 function resolveBackendUrl() {
   if (process.env.MEETING_BACKEND_URL) return process.env.MEETING_BACKEND_URL;
   try {
     const cfg = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'backend.json'), 'utf8'));
     if (cfg && typeof cfg.backendUrl === 'string' && cfg.backendUrl) return cfg.backendUrl;
   } catch { /* no file → default */ }
-  return 'http://localhost:8787';
+  return app.isPackaged ? DEFAULT_BACKEND_URL : 'http://localhost:8787';
 }
 
 function createTokenStorage() {

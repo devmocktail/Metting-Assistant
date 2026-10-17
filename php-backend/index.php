@@ -72,6 +72,12 @@ $issueSession = function (array $identity) use ($store, $config, $tokens) {
 try {
     if ($method === 'GET' && $path === '/') {
         header('Content-Type: text/html; charset=utf-8');
+        // The single-file build inlines the marketing landing page as LANDING_HTML;
+        // if it isn't present (dev/separated), fall back to a small status page.
+        if (defined('LANDING_HTML')) {
+            echo LANDING_HTML;
+            exit;
+        }
         echo '<!doctype html><meta charset="utf-8"><title>Meeting Assistant . backend</title>'
             . '<body style="font-family:system-ui,Segoe UI,sans-serif;background:#0d0f12;color:#e3e6ea;margin:0;padding:48px;line-height:1.6">'
             . '<h2 style="margin:0 0 6px">A2solveX Meeting Assistant - backend</h2>'

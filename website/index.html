@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover" />
+<title>A2solveX Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  /* Layout: dark HUD product site — sticky glass nav, split hero with a floating
+     overlay mock, then feature grid, numbered steps, FAQ, download band. */
+  :root {
+    --bg:#0a0d11; --bg2:#0e1319; --surface:#121a23; --surface2:#172230; --line:#222d38; --line2:#2c3848;
+    --fg:#e9eef3; --muted:#9aa6b2; --faint:#64717d;
+    --accent:#34e0a1; --accent2:#56b6ff; --accent-ink:#04231a; --glow:53,224,161;
+    --shadow:0 24px 70px rgba(0,0,0,.55); --card-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 16px 40px rgba(0,0,0,.35);
+    color-scheme:dark;
+    --ff-display:"Bricolage Grotesque","Hanken Grotesk",system-ui,sans-serif;
+    --ff-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --ff-mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:light){ :root:not([data-theme="dark"]){
+    --bg:#f4f8fa; --bg2:#ebf1f5; --surface:#ffffff; --surface2:#f4f8fb; --line:#e2eaf0; --line2:#d4dee6;
+    --fg:#101a22; --muted:#53616d; --faint:#8793a0;
+    --accent:#0ea571; --accent2:#2b74e6; --accent-ink:#ffffff; --glow:14,165,113;
+    --shadow:0 24px 60px rgba(20,40,60,.14); --card-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 14px 34px rgba(20,40,60,.08);
+    color-scheme:light;
+  }}
+  :root[data-theme="light"]{
+    --bg:#f4f8fa; --bg2:#ebf1f5; --surface:#ffffff; --surface2:#f4f8fb; --line:#e2eaf0; --line2:#d4dee6;
+    --fg:#101a22; --muted:#53616d; --faint:#8793a0;
+    --accent:#0ea571; --accent2:#2b74e6; --accent-ink:#ffffff; --glow:14,165,113;
+    --shadow:0 24px 60px rgba(20,40,60,.14); --card-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 14px 34px rgba(20,40,60,.08);
+    color-scheme:light;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--fg); font-family:var(--ff-body); font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  body::before{ content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:60; background:var(--bg); }
+  a{ color:inherit; text-decoration:none; }
+  h1,h2,h3{ font-family:var(--ff-display); font-weight:800; letter-spacing:-.02em; line-height:1.04; text-wrap:balance; margin:0; }
+  p{ margin:0; }
+  .wrap{ width:100%; max-width:1180px; margin-inline:auto;
+    padding-left:max(22px,env(safe-area-inset-left,0px)); padding-right:max(22px,env(safe-area-inset-right,0px)); }
+  .accent-text{ background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+
+  /* buttons */
+  .btn{ display:inline-flex; align-items:center; gap:9px; height:50px; padding:0 22px; border-radius:13px; font-family:var(--ff-body);
+    font-weight:650; font-size:15px; border:1px solid transparent; cursor:pointer; transition:transform .15s ease, background .15s ease, border-color .15s ease; white-space:nowrap; }
+  .btn.primary{ color:var(--accent-ink); background:linear-gradient(135deg,var(--accent),#2fb98a); box-shadow:0 10px 26px rgba(var(--glow),.35); }
+  .btn.primary:hover{ transform:translateY(-2px); }
+  .btn.ghost{ color:var(--fg); background:color-mix(in srgb, var(--fg) 5%, transparent); border-color:var(--line2); }
+  .btn.ghost:hover{ background:color-mix(in srgb, var(--fg) 9%, transparent); }
+  .btn.sm{ height:42px; padding:0 17px; font-size:14px; border-radius:11px; }
+  .btn svg{ width:18px; height:18px; }
+
+  /* nav */
+  .nav{ position:sticky; top:env(safe-area-inset-top,0px); z-index:61; backdrop-filter:blur(14px);
+    background:color-mix(in srgb, var(--bg) 78%, transparent); border-bottom:1px solid transparent; transition:border-color .2s, background .2s; }
+  .nav.scrolled{ border-bottom-color:var(--line); background:color-mix(in srgb, var(--bg) 90%, transparent); }
+  .nav .bar{ display:flex; align-items:center; gap:16px; height:68px; }
+  .brand{ display:flex; align-items:center; gap:11px; font-family:var(--ff-display); font-weight:800; font-size:18px; letter-spacing:-.01em; }
+  .mark{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:var(--accent-ink);
+    background:linear-gradient(140deg,var(--accent),var(--accent2)); box-shadow:0 8px 20px rgba(var(--glow),.35); }
+  .mark svg{ width:19px; height:19px; }
+  .brand .x{ color:var(--accent); }
+  .nav .links{ display:flex; gap:4px; margin-left:12px; }
+  .nav .links a{ padding:9px 14px; border-radius:10px; color:var(--muted); font-weight:550; font-size:14.5px; }
+  .nav .links a:hover{ color:var(--fg); background:color-mix(in srgb, var(--fg) 6%, transparent); }
+  .nav .sp{ flex:1; }
+
+  /* hero */
+  .hero{ position:relative; overflow:hidden; }
+  .hero::before{ content:""; position:absolute; inset:-200px 0 auto 0; height:620px; pointer-events:none; z-index:0;
+    background:radial-gradient(60% 70% at 72% 8%, rgba(var(--glow),.16), transparent 60%),
+               radial-gradient(45% 60% at 18% 0%, rgba(86,182,255,.12), transparent 60%); }
+  .hero .wrap{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,560px); gap:54px; align-items:center;
+    padding-block:76px 86px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:9px; height:34px; padding:0 14px 0 11px; border-radius:999px;
+    border:1px solid var(--line2); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); color:var(--fg);
+    font-size:12.5px; font-weight:600; font-family:var(--ff-mono); letter-spacing:.01em; }
+  .eyebrow .pip{ width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(var(--glow),.22); }
+  h1{ font-size:clamp(38px,5.4vw,62px); margin:22px 0 0; }
+  .lede{ margin-top:20px; max-width:34em; color:var(--muted); font-size:clamp(16px,1.5vw,18.5px); }
+  .lede b{ color:var(--fg); font-weight:600; }
+  .cta{ display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
+  .trust{ display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:24px; color:var(--faint); font-size:13px; font-family:var(--ff-mono); }
+  .trust span{ display:inline-flex; align-items:center; gap:7px; }
+  .trust svg{ width:14px; height:14px; color:var(--accent); }
+
+  /* hero visual — floating overlay over a dim call */
+  .stage{ position:relative; aspect-ratio:5/4.4; max-width:100%; border-radius:20px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(160deg,#0c1016,#0a0e13); box-shadow:var(--shadow); }
+  :root[data-theme="light"] .stage, :root:not([data-theme="dark"]) .stage{ } /* keep stage dark in both themes (it's a screen) */
+  .stage{ background:linear-gradient(160deg,#10151c,#0b0f15); color:#e9eef3; }
+  .stage .grid{ position:absolute; inset:0; opacity:.5;
+    background:linear-gradient(transparent 95%, rgba(255,255,255,.04) 95%) 0 0/100% 34px,
+              linear-gradient(90deg, transparent 95%, rgba(255,255,255,.04) 95%) 0 0/34px 100%; }
+  .call{ position:absolute; inset:16px; border-radius:14px; border:1px solid rgba(255,255,255,.07); overflow:hidden;
+    background:linear-gradient(180deg,#141b24,#0f151d); }
+  .call .topbar{ height:34px; display:flex; align-items:center; gap:7px; padding:0 13px; border-bottom:1px solid rgba(255,255,255,.06); color:#7d8a98; font:500 11.5px var(--ff-mono); }
+  .dot3{ display:flex; gap:6px; } .dot3 i{ width:9px; height:9px; border-radius:50%; background:#2b3744; }
+  .call .tiles{ position:absolute; inset:34px 0 0 0; display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; }
+  .tile{ border-radius:10px; background:linear-gradient(170deg,#1b2430,#141c26); border:1px solid rgba(255,255,255,.05); position:relative; }
+  .tile .who{ position:absolute; left:9px; bottom:8px; font:500 10.5px var(--ff-mono); color:#8b98a6; background:rgba(0,0,0,.35); padding:2px 7px; border-radius:6px; }
+  .tile .face{ position:absolute; inset:0; display:grid; place-items:center; }
+  .tile .face b{ width:44px; height:44px; border-radius:50%; display:grid; place-items:center; color:#0b0f15; font:800 16px var(--ff-display);
+    background:linear-gradient(140deg,#49586a,#36424f); }
+  .overlay{ position:absolute; right:22px; bottom:22px; width:min(300px,76%); border-radius:14px; z-index:3;
+    background:linear-gradient(180deg, rgba(18,26,35,.96), rgba(13,19,27,.97)); border:1px solid rgba(var(--glow),.4);
+    box-shadow:0 20px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03) inset; backdrop-filter:blur(4px); overflow:hidden; }
+  .overlay .ohead{ display:flex; align-items:center; gap:8px; height:34px; padding:0 11px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .overlay .ohead .m{ width:19px; height:19px; border-radius:6px; display:grid; place-items:center; color:var(--accent-ink);
+    background:linear-gradient(140deg,var(--accent),var(--accent2)); font:800 10px var(--ff-display); }
+  .overlay .ohead b{ font:700 12.5px var(--ff-display); } .overlay .ohead b .x{ color:var(--accent); }
+  .overlay .ohead .live{ margin-left:auto; display:inline-flex; align-items:center; gap:5px; color:var(--accent); font:500 10px var(--ff-mono); }
+  .overlay .ohead .live i{ width:6px; height:6px; border-radius:50%; background:var(--accent); animation:blink 1.6s infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  .cap{ padding:11px 12px 9px; font-size:12.5px; line-height:1.5; color:#cdd6df; }
+  .cap .k{ color:#7d8a98; font:500 9.5px var(--ff-mono); letter-spacing:.06em; text-transform:uppercase; }
+  .cap .t{ margin-top:4px; } .cap .t em{ color:var(--accent); font-style:normal; }
+  .compose{ margin:4px 10px 11px; border:1px solid rgba(255,255,255,.1); border-radius:10px; background:rgba(0,0,0,.25); padding:9px 10px; }
+  .compose .lbl{ color:#6f7c8a; font:500 9.5px var(--ff-mono); letter-spacing:.05em; text-transform:uppercase; }
+  .compose .q{ margin-top:4px; font-size:12px; color:#e7edf3; } .compose .q .car{ display:inline-block; width:1.5px; height:13px; background:var(--accent); vertical-align:-2px; margin-left:2px; animation:blink 1s step-end infinite; }
+  .shield{ position:absolute; left:22px; top:22px; z-index:3; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:11px;
+    background:rgba(10,15,20,.72); border:1px solid rgba(var(--glow),.35); color:#d7f6ea; font:600 11.5px var(--ff-mono); backdrop-filter:blur(3px); }
+  .shield svg{ width:15px; height:15px; color:var(--accent); }
+
+  /* generic section */
+  section{ position:relative; }
+  .band{ padding-block:84px; }
+  .band.alt{ background:var(--bg2); border-block:1px solid var(--line); }
+  .eyebrow2{ font:600 12.5px var(--ff-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+  .h2{ font-size:clamp(28px,3.6vw,42px); margin-top:14px; }
+  .sub{ margin-top:14px; max-width:46ch; color:var(--muted); font-size:17px; }
+  .head-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+
+  /* features */
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:40px; }
+  .card{ border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:22px 20px; box-shadow:var(--card-shadow); }
+  .card .ic{ width:42px; height:42px; border-radius:12px; display:grid; place-items:center; color:var(--accent);
+    background:color-mix(in srgb, var(--accent) 12%, var(--surface2)); border:1px solid color-mix(in srgb,var(--accent) 22%, transparent); }
+  .card .ic svg{ width:21px; height:21px; }
+  .card h3{ font-size:18.5px; margin-top:16px; font-weight:700; }
+  .card p{ margin-top:8px; color:var(--muted); font-size:14.5px; line-height:1.58; }
+  .card.wide{ grid-column:span 2; display:flex; gap:20px; align-items:center; }
+  .card.wide .ic{ flex:0 0 auto; }
+
+  /* steps */
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:40px; counter-reset:s; }
+  .step{ border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:24px 22px; position:relative; box-shadow:var(--card-shadow); }
+  .step .n{ font-family:var(--ff-display); font-weight:800; font-size:14px; width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+    color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--surface2)); border:1px solid color-mix(in srgb,var(--accent) 22%, transparent); }
+  .step h3{ font-size:19px; margin-top:16px; } .step p{ margin-top:8px; color:var(--muted); font-size:14.5px; }
+
+  /* faq */
+  .faq{ margin-top:36px; display:grid; gap:12px; max-width:860px; }
+  details{ border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden; }
+  summary{ list-style:none; cursor:pointer; padding:18px 20px; display:flex; align-items:center; gap:14px; font-weight:600; font-size:16.5px; }
+  summary::-webkit-details-marker{ display:none; }
+  summary .pm{ margin-left:auto; width:22px; height:22px; flex:0 0 auto; position:relative; transition:transform .2s ease; color:var(--muted); }
+  summary .pm::before,summary .pm::after{ content:""; position:absolute; background:currentColor; border-radius:2px; }
+  summary .pm::before{ left:4px; right:4px; top:10px; height:2px; } summary .pm::after{ top:4px; bottom:4px; left:10px; width:2px; transition:opacity .2s; }
+  details[open] summary .pm::after{ opacity:0; }
+  details .a{ padding:0 20px 20px 54px; color:var(--muted); font-size:15px; line-height:1.6; }
+
+  /* download band */
+  .download{ position:relative; overflow:hidden; border:1px solid var(--line2); border-radius:24px; margin-top:8px;
+    background:radial-gradient(90% 150% at 50% -40%, rgba(var(--glow),.18), transparent 60%), var(--surface); box-shadow:var(--card-shadow); text-align:center; padding:56px 28px; }
+  .download h2{ font-size:clamp(28px,4vw,44px); } .download p{ margin-top:14px; color:var(--muted); }
+  .download .cta{ justify-content:center; margin-top:26px; }
+  .download .meta{ margin-top:16px; color:var(--faint); font:500 13px var(--ff-mono); }
+  .note{ margin-top:12px; color:var(--faint); font-size:12.5px; max-width:48ch; margin-inline:auto; }
+
+  /* footer */
+  footer{ border-top:1px solid var(--line); margin-top:4px; }
+  footer .wrap{ display:flex; flex-wrap:wrap; gap:16px 28px; align-items:center; padding-block:30px 40px; color:var(--faint); font-size:14px; }
+  footer .sp{ flex:1; } footer a{ color:var(--muted); } footer a:hover{ color:var(--fg); }
+
+  @media (max-width:980px){
+    .hero .wrap{ grid-template-columns:1fr; gap:38px; padding-block:48px 56px; }
+    .stage{ max-width:520px; margin-inline:auto; width:100%; }
+    .grid{ grid-template-columns:repeat(2,1fr); } .card.wide{ grid-column:span 2; }
+    .steps{ grid-template-columns:1fr; }
+  }
+  @media (max-width:760px){
+    .nav .links{ display:none; }
+    .band{ padding-block:60px; }
+    .grid{ grid-template-columns:1fr; } .card.wide{ grid-column:span 1; flex-direction:column; align-items:flex-start; }
+    h1{ font-size:clamp(32px,8vw,44px); }
+    .btn{ height:48px; } .cta .btn{ flex:1; justify-content:center; }
+    details .a{ padding-left:20px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="A2solveX home">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 4 6v6c0 4.5 3.3 7.8 8 9.5 4.7-1.7 8-5 8-9.5V6l-8-3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.6 12.2l2.3 2.3 4.5-4.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      A2solve<span class="x">X</span>
+    </a>
+    <nav class="links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <span class="sp"></span>
+    <a class="btn primary sm" href="#download">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download
+    </a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="col">
+        <span class="eyebrow"><span class="pip"></span>Invisible copilot · hidden on screen share</span>
+        <h1>The AI copilot they <span class="accent-text">can't see</span> on your screen.</h1>
+        <p class="lede">A2solveX floats above your call, stays <b>hidden when you share your screen</b>, turns what's being said into <b>live captions on your PC</b>, and drops them straight into <b>ChatGPT</b> — so you always have an answer ready. Your audio never leaves the device.</p>
+        <div class="cta">
+          <a class="btn primary" href="#download">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+          </a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+        <div class="trust">
+          <span><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Free, no subscription</span>
+          <span><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Runs 100% on your PC</span>
+          <span><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Windows 10/11 · 64-bit</span>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="stage" role="img" aria-label="A2solveX overlay floating over a video call, hidden from screen capture">
+          <div class="grid"></div>
+          <div class="call">
+            <div class="topbar"><span class="dot3"><i></i><i></i><i></i></span><span>Weekly sync — screen shared</span></div>
+            <div class="tiles">
+              <div class="tile"><div class="face"><b>RK</b></div><span class="who">Priya (host)</span></div>
+              <div class="tile"><div class="face"><b>DM</b></div><span class="who">Daniel</span></div>
+            </div>
+          </div>
+          <span class="shield"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 4 6v6c0 4.5 3.3 7.8 8 9.5 4.7-1.7 8-5 8-9.5V6l-8-3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Hidden on screen share</span>
+          <div class="overlay">
+            <div class="ohead"><span class="m">A2</span><b>A2solve<span class="x">X</span></b><span class="live"><i></i>Listening</span></div>
+            <div class="cap"><div class="k">Live caption</div><div class="t">…so what's the <em>time complexity</em> of that approach, and can we bring it down?</div></div>
+            <div class="compose"><div class="lbl">ChatGPT prompt</div><div class="q">what's the time complexity of that approach, and can we bring it down?<span class="car"></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="features">
+    <div class="wrap">
+      <div class="head-row">
+        <div>
+          <div class="eyebrow2">What it does</div>
+          <h2 class="h2">Built to be unseen — and genuinely useful.</h2>
+        </div>
+        <p class="sub">A focused desktop overlay: capture the room, read it as text, and have the answer ready in ChatGPT — without touching your workflow.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 4 6v6c0 4.5 3.3 7.8 8 9.5 4.7-1.7 8-5 8-9.5V6l-8-3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12.4l2.1 2.1 4-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>Hidden on screen share</h3>
+          <p>Marked for exclusion from Zoom, Meet and Teams capture with Windows content protection. You see the overlay; the people you share with don't.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 12h2.5L8 5l3 14 2.5-9L16 14l1.5-2H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>Live captions, on-device</h3>
+          <p>System audio becomes text on your own PC with a local NVIDIA Parakeet model — no cloud, no API keys, no per-minute fees.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          <h3>Straight into ChatGPT</h3>
+          <p>Each phrase lands in the ChatGPT prompt box as it's recognized. Nothing sends on its own — you review and press send.</p>
+        </div>
+        <div class="card wide">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 21h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div>
+            <h3>Always on top, never in the way</h3>
+            <p>A draggable window that stays above your call, with a real minimize, a compact bar, and maximize — move it aside the instant you need another app.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="2"/><path d="M3.5 19c.8-3.2 3-4.8 5.5-4.8 1.3 0 2.5.4 3.5 1.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m15.5 16.5 1.8 1.8 3.2-3.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>Admin-controlled access</h3>
+          <p>Sign in with Google. An admin approves accounts from a dashboard and can revoke — or remotely remove — any device within minutes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="how">
+    <div class="wrap">
+      <div class="eyebrow2">How it works</div>
+      <h2 class="h2">Running in three steps.</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>Download &amp; sign in</h3><p>Install for Windows, open the overlay, and sign in with your Google account.</p></div>
+        <div class="step"><div class="n">2</div><h3>Get approved</h3><p>Your admin approves your account from the dashboard. Access turns on the moment they do.</p></div>
+        <div class="step"><div class="n">3</div><h3>Start &amp; ask</h3><p>Play your call, start captions, and your questions fill the ChatGPT prompt automatically — ready to send.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="faq">
+    <div class="wrap">
+      <div class="eyebrow2">Questions</div>
+      <h2 class="h2">Good to know.</h2>
+      <div class="faq">
+        <details open><summary>Is it really free?<span class="pm"></span></summary><div class="a">Yes. Captions run on a model downloaded to your PC, so there's no subscription, API key, or per-minute charge. You just need a one-time internet connection to install the model.</div></details>
+        <details><summary>Will people see it when I share my screen?<span class="pm"></span></summary><div class="a">A2solveX asks Windows to exclude its window from screen capture, so on supported setups it stays off the shared stream while you still see it. This is an OS hint, not a guarantee for every meeting app and display setup — verify it on your own machine and client before you rely on it.</div></details>
+        <details><summary>Does my audio get uploaded anywhere?<span class="pm"></span></summary><div class="a">No. Audio is captured in memory and transcribed on your device. It's never written to a file, and the recognizer is blocked from the network at runtime. Only the text you choose to send to ChatGPT leaves your machine.</div></details>
+        <details><summary>Which apps does it work with?<span class="pm"></span></summary><div class="a">Any app that plays sound through your selected Windows output — Zoom, Google Meet, Microsoft Teams, a browser tab, a recording. It captures the output you pick, not your microphone.</div></details>
+        <details><summary>How do I get access?<span class="pm"></span></summary><div class="a">Install, sign in with Google, and your administrator approves your account. Admins manage everyone from a central dashboard and can pause or remove access anytime.</div></details>
+        <details><summary>What do I need to run it?<span class="pm"></span></summary><div class="a">64-bit Windows 10 (version 2004 or later) or Windows 11. No Python, Node, or developer tools required — the installer bundles everything.</div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="download" id="download">
+        <div class="eyebrow2" style="color:var(--accent)">Download</div>
+        <h2>Ready when you are.</h2>
+        <p>Install A2solveX and have your copilot on the next call.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://mediumturquoise-pheasant-734020.hostingersite.com/download/A2solveX-Setup.exe">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+          </a>
+        </div>
+        <div class="meta">v0.1.0 · ~180 MB · Windows 10/11 (64-bit)</div>
+        <p class="note">Not code-signed yet, so Windows SmartScreen may show “Windows protected your PC” on first run — choose <b>More info → Run anyway</b>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top" style="font-size:16px"><span class="mark" style="width:28px;height:28px"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 4 6v6c0 4.5 3.3 7.8 8 9.5 4.7-1.7 8-5 8-9.5V6l-8-3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>A2solve<span class="x">X</span></a>
+    <span class="sp"></span>
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#faq">FAQ</a>
+    <span style="color:var(--faint)">© 2026 A2solveX · Private by design</span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var nav = document.getElementById('nav');
+    var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 8); };
+    onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+</script>
+
+</body>
+</html>
