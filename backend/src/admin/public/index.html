@@ -4,104 +4,190 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
-    <title>Meeting Assistant · Admin</title>
+    <title>A2solveX · Admin</title>
     <style>
-      :root { color-scheme: dark; --green:#50dea3; --red:#ff6b6b; --amber:#daa744; --bg:#0d0f12; --panel:#15181c; --line:#262b31; --text:#e3e6ea; --muted:#8b929c; }
-      * { box-sizing: border-box; }
-      body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 Inter,"Segoe UI",system-ui,Arial,sans-serif; }
-      header { display:flex; align-items:center; gap:12px; padding:16px 22px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
-      header h1 { margin:0; font-size:16px; font-weight:750; letter-spacing:-.3px; }
-      header .spacer { flex:1; }
-      .pill { padding:4px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; }
-      main { padding:22px; max-width:1080px; margin:0 auto; }
-      .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:18px; }
-      .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      input, select, button { font:inherit; }
-      input[type=text], input[type=email] { height:38px; padding:0 12px; border:1px solid var(--line); border-radius:9px; background:#101215; color:var(--text); min-width:220px; }
-      input:focus { outline:none; border-color:var(--green); }
-      button { height:36px; padding:0 14px; border:1px solid var(--line); border-radius:9px; background:#1e2227; color:var(--text); cursor:pointer; font-weight:600; }
-      button:hover { background:#272c33; }
-      button.primary { background:var(--green); color:#07251a; border-color:transparent; }
-      button.danger { color:#2a0d0d; background:var(--red); border-color:transparent; }
-      button.ghost { background:transparent; }
-      button:disabled { opacity:.5; cursor:not-allowed; }
-      table { width:100%; border-collapse:collapse; }
-      th, td { text-align:left; padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
-      th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
-      td .email { font-weight:650; }
-      td .sub { color:var(--muted); font-size:12px; }
-      .badge { padding:3px 9px; border-radius:999px; font-size:12px; font-weight:700; }
-      .badge.approved { color:#07251a; background:var(--green); }
-      .badge.pending { color:#2a1f05; background:var(--amber); }
-      .badge.banned { color:#2a0d0d; background:var(--red); }
-      .badge.unknown { color:var(--muted); background:#2a2e34; }
-      .admintag { margin-left:6px; color:var(--green); font-size:11px; border:1px solid var(--green); padding:1px 6px; border-radius:6px; }
-      .muted { color:var(--muted); }
-      .actions { display:flex; gap:6px; flex-wrap:wrap; }
-      .notice { padding:10px 12px; border-radius:9px; background:#241216; border:1px solid #502; color:#ffb4b4; margin:10px 0; display:none; }
-      .ok { color:var(--green); }
-      pre { white-space:pre-wrap; word-break:break-word; max-height:300px; overflow:auto; background:#101215; border:1px solid var(--line); border-radius:9px; padding:12px; font-size:12px; }
-      .gate { max-width:460px; margin:60px auto; }
+      :root {
+        color-scheme: dark;
+        --bg:#0b0d10; --bg2:#0e1014; --panel:#15181d; --panel2:#1a1e24; --line:#242a31;
+        --text:#e8ebef; --muted:#8b929c; --faint:#6b727c;
+        --green:#50dea3; --green-ink:#07251a; --amber:#e0a63a; --amber-ink:#2a1f05;
+        --red:#ff6b6b; --red-ink:#2a0d0d; --blue:#6aa8ff;
+        --radius:14px; --radius-sm:10px;
+        --shadow:0 1px 0 #ffffff08 inset, 0 12px 30px #0006;
+      }
+      * { box-sizing:border-box; }
+      html,body { height:100%; }
+      body { margin:0; background:radial-gradient(1200px 600px at 80% -10%, #141922 0%, var(--bg) 55%); color:var(--text);
+        font:14px/1.5 Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
       .hidden { display:none !important; }
-      h2 { font-size:14px; margin:0 0 12px; }
+      a { color:var(--green); }
+      button { font:inherit; cursor:pointer; border:0; background:none; color:inherit; }
+      input, select { font:inherit; }
+
+      /* ---------- top bar ---------- */
+      .topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
+        padding:14px 24px; background:#0b0d10cc; backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+      .brand { display:flex; align-items:center; gap:11px; font-weight:750; letter-spacing:-.2px; }
+      .logo { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:#06251a;
+        background:linear-gradient(145deg,#71ecbb,#3bcaa0); font-weight:850; font-size:13px; box-shadow:0 6px 16px #50dea340; }
+      .brand b { font-size:15px; } .brand .x { color:var(--green); }
+      .spacer { flex:1; }
+      .chip { display:inline-flex; align-items:center; gap:7px; height:32px; padding:0 12px; border:1px solid var(--line);
+        border-radius:999px; color:var(--muted); font-size:12px; font-weight:600; background:#ffffff06; }
+      .chip .dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px #50dea322; }
+      .iconbtn { display:grid; place-items:center; height:34px; min-width:34px; padding:0 12px; border:1px solid var(--line);
+        border-radius:10px; color:var(--text); background:#ffffff06; font-size:12.5px; font-weight:600; }
+      .iconbtn:hover { background:#ffffff0e; border-color:#333b44; }
+
+      /* ---------- layout ---------- */
+      .wrap { max-width:1120px; margin:0 auto; padding:24px 24px 60px; }
+      .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+      .stat { position:relative; padding:16px 16px 15px; border:1px solid var(--line); border-radius:var(--radius);
+        background:linear-gradient(180deg,var(--panel2),var(--panel)); box-shadow:var(--shadow); overflow:hidden; }
+      .stat .k { color:var(--muted); font-size:11.5px; font-weight:650; letter-spacing:.5px; text-transform:uppercase; }
+      .stat .v { margin-top:6px; font-size:30px; font-weight:800; letter-spacing:-1px; }
+      .stat .bar { position:absolute; left:0; top:0; bottom:0; width:3px; }
+      .stat.total .bar{background:var(--blue);} .stat.approved .bar{background:var(--green);}
+      .stat.pending .bar{background:var(--amber);} .stat.banned .bar{background:var(--red);}
+      .stat.total .v{color:#cfe0ff;} .stat.approved .v{color:#7ef0c4;} .stat.pending .v{color:#f3c97a;} .stat.banned .v{color:#ff9d9d;}
+
+      .panel { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow); margin-bottom:20px; }
+      .panel-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:16px 18px; border-bottom:1px solid var(--line); }
+      .panel-head h2 { margin:0; font-size:15px; font-weight:700; }
+      .panel-head .count { color:var(--faint); font-weight:600; font-size:12px; }
+
+      .search { display:flex; align-items:center; gap:8px; height:36px; padding:0 12px; min-width:200px; flex:1;
+        border:1px solid var(--line); border-radius:10px; background:var(--bg2); }
+      .search input { width:100%; border:0; outline:0; background:transparent; color:var(--text); font-size:13px; }
+      .search input::placeholder { color:var(--faint); }
+
+      .filters { display:flex; gap:6px; }
+      .filters button { height:32px; padding:0 13px; border-radius:999px; border:1px solid var(--line); color:var(--muted);
+        background:#ffffff05; font-size:12.5px; font-weight:650; }
+      .filters button:hover { color:var(--text); }
+      .filters button.on { color:#06251a; background:var(--green); border-color:transparent; }
+
+      .addrow { display:flex; gap:8px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line); background:#ffffff03; flex-wrap:wrap; }
+      .addrow input[type=email] { height:36px; padding:0 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg2);
+        color:var(--text); min-width:240px; flex:1; }
+      .addrow select { height:36px; padding:0 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg2); color:var(--text); }
+      .addrow input:focus, .addrow select:focus, .search:focus-within { outline:none; border-color:#3a7d64; }
+
+      table { width:100%; border-collapse:collapse; }
+      th { text-align:left; padding:11px 18px; color:var(--faint); font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:.5px; }
+      td { padding:12px 18px; border-top:1px solid var(--line); vertical-align:middle; }
+      tbody tr:hover { background:#ffffff04; }
+      .user { display:flex; align-items:center; gap:12px; }
+      .avatar { display:grid; place-items:center; width:38px; height:38px; flex:0 0 auto; border-radius:11px; font-weight:750; font-size:13px; color:#0b0d10; }
+      .uinfo .email { font-weight:650; display:flex; align-items:center; gap:7px; }
+      .uinfo .name { color:var(--muted); font-size:12px; }
+      .tag { font-size:10px; font-weight:750; letter-spacing:.3px; padding:1px 6px; border-radius:6px; border:1px solid currentColor; }
+      .tag.admin { color:var(--green); } .tag.removing { color:var(--red); border-color:var(--red); }
+      .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+      .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+      .badge.approved { color:#07251a; background:var(--green); } .badge.approved::before{background:#06251a;}
+      .badge.pending { color:#2a1f05; background:var(--amber); } .badge.pending::before{background:#2a1f05;}
+      .badge.banned { color:#2a0d0d; background:var(--red); } .badge.banned::before{background:#2a0d0d;}
+      .badge.unknown { color:var(--muted); background:#2a2f36; } .badge.unknown::before{background:var(--muted);}
+      .when { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+      .actions { display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
+      .btn { height:30px; padding:0 11px; border-radius:8px; border:1px solid var(--line); color:var(--text); background:#ffffff08; font-size:12px; font-weight:650; }
+      .btn:hover { background:#ffffff12; }
+      .btn.primary { background:var(--green); color:#06251a; border-color:transparent; }
+      .btn.primary:hover { background:#6cebb6; }
+      .btn.warn { background:#2a1316; color:#ffb3b3; border-color:#54232a; }
+      .btn.warn:hover { background:#3a1a1e; }
+      .btn.ghost { background:transparent; color:var(--muted); }
+      .empty { padding:46px 18px; text-align:center; color:var(--faint); }
+
+      #audit { margin:0; padding:14px 18px; max-height:280px; overflow:auto; font:12px/1.7 ui-monospace,"Cascadia Code",Consolas,monospace; color:#aab2bd; white-space:pre-wrap; word-break:break-word; }
+
+      /* ---------- gate ---------- */
+      .gate-screen { min-height:100vh; display:grid; place-items:center; padding:20px; }
+      .gate-card { width:min(420px,100%); padding:30px 28px; border:1px solid var(--line); border-radius:18px;
+        background:linear-gradient(180deg,var(--panel2),var(--panel)); box-shadow:0 30px 80px #0008; text-align:center; }
+      .gate-card .logo { width:46px; height:46px; margin:0 auto 14px; font-size:16px; border-radius:13px; }
+      .gate-card h1 { margin:0 0 6px; font-size:19px; } .gate-card p { margin:0 0 18px; color:var(--muted); font-size:13px; }
+      .gate-card input { width:100%; height:42px; padding:0 14px; margin-bottom:12px; border:1px solid var(--line); border-radius:11px;
+        background:var(--bg2); color:var(--text); font-size:13px; }
+      .gate-card input:focus { outline:none; border-color:var(--green); }
+      .gate-card .btn.primary { width:100%; height:42px; font-size:13.5px; }
+      .gate-err { display:none; margin-top:12px; padding:9px 12px; border-radius:9px; background:#2a1316; border:1px solid #54232a; color:#ffb3b3; font-size:12.5px; }
+
+      /* ---------- toast ---------- */
+      .toast { position:fixed; right:20px; bottom:20px; z-index:50; display:none; max-width:360px; padding:12px 15px; border-radius:11px;
+        border:1px solid var(--line); background:#171b21; box-shadow:0 16px 40px #0009; font-size:13px; }
+      .toast.ok { border-color:#1f5a44; } .toast.err { border-color:#5a2730; color:#ffc0c0; }
+
+      @media (max-width:760px) {
+        .stats { grid-template-columns:repeat(2,1fr); }
+        .when { display:none; } th:nth-child(3), td:nth-child(3){ display:none; }
+        .wrap { padding:16px 14px 50px; } .topbar { padding:12px 14px; }
+      }
     </style>
   </head>
   <body>
-    <header>
-      <h1>A2solveX · Admin</h1>
-      <span class="pill" id="mode-pill">—</span>
-      <div class="spacer"></div>
-      <span class="pill" id="count-pill">0 users</span>
-      <button class="ghost" id="refresh-btn" title="Refresh">Refresh</button>
-      <button class="ghost" id="signout-btn" title="Forget admin token">Sign out</button>
-    </header>
-
-    <main>
-      <div id="gate" class="card gate hidden">
-        <h2>Admin access</h2>
-        <p class="muted">Enter the admin token (the <code>ADMIN_TOKEN</code> from the backend environment).</p>
-        <div class="row">
-          <input type="text" id="token-input" placeholder="Admin token" autocomplete="off" />
-          <button class="primary" id="token-save">Unlock</button>
-        </div>
-        <div class="notice" id="gate-notice"></div>
+    <!-- Gate -->
+    <div id="gate" class="gate-screen">
+      <div class="gate-card">
+        <div class="logo">A2</div>
+        <h1>Admin access</h1>
+        <p>Enter the admin token to manage access.</p>
+        <input type="password" id="token-input" placeholder="Admin token" autocomplete="off" />
+        <button class="btn primary" id="token-save">Unlock dashboard</button>
+        <div class="gate-err" id="gate-error"></div>
       </div>
+    </div>
 
-      <div id="app" class="hidden">
-        <div class="notice" id="notice"></div>
+    <!-- App -->
+    <div id="app" class="hidden">
+      <header class="topbar">
+        <div class="brand"><span class="logo">A2</span><b>A2solve<span class="x">X</span> · Admin</b></div>
+        <span class="spacer"></span>
+        <span class="chip" id="mode-chip"><span class="dot"></span><span id="mode-text">—</span></span>
+        <button class="iconbtn" id="refresh-btn" title="Refresh">↻ Refresh</button>
+        <button class="iconbtn" id="signout-btn" title="Sign out">Sign out</button>
+      </header>
 
-        <div class="card">
-          <h2>Add or pre-approve an email</h2>
-          <div class="row">
-            <input type="email" id="add-email" placeholder="person@gmail.com" autocomplete="off" />
-            <select id="add-status">
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="banned">Banned</option>
-            </select>
-            <button class="primary" id="add-btn">Save</button>
-            <span class="muted">Pre-set a status before the user's first sign-in.</span>
+      <main class="wrap">
+        <section class="stats">
+          <div class="stat total"><span class="bar"></span><div class="k">Total users</div><div class="v" id="stat-total">0</div></div>
+          <div class="stat approved"><span class="bar"></span><div class="k">Approved</div><div class="v" id="stat-approved">0</div></div>
+          <div class="stat pending"><span class="bar"></span><div class="k">Pending</div><div class="v" id="stat-pending">0</div></div>
+          <div class="stat banned"><span class="bar"></span><div class="k">Banned</div><div class="v" id="stat-banned">0</div></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Users <span class="count" id="user-count"></span></h2>
+            <span class="spacer"></span>
+            <label class="search">🔎<input id="search" type="text" placeholder="Search email or name…" autocomplete="off" /></label>
+            <div class="filters" id="filters">
+              <button data-filter="all" class="on">All</button>
+              <button data-filter="pending">Pending</button>
+              <button data-filter="approved">Approved</button>
+              <button data-filter="banned">Banned</button>
+            </div>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="row" style="justify-content:space-between">
-            <h2 style="margin:0">Users</h2>
-            <label class="muted"><input type="checkbox" id="auto" checked /> auto-refresh</label>
+          <div class="addrow">
+            <input type="email" id="add-email" placeholder="Add or pre-approve an email…" autocomplete="off" />
+            <select id="add-status"><option value="approved">Approved</option><option value="pending">Pending</option><option value="banned">Banned</option></select>
+            <button class="btn primary" id="add-btn">Add user</button>
           </div>
           <table>
-            <thead><tr><th>User</th><th>Status</th><th>Last seen</th><th>Actions</th></tr></thead>
-            <tbody id="users-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            <thead><tr><th>User</th><th>Status</th><th>Last seen</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody id="rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
           </table>
-        </div>
+        </section>
 
-        <div class="card">
-          <h2>Audit log</h2>
+        <section class="panel">
+          <div class="panel-head"><h2>Activity log</h2><span class="spacer"></span><label class="chip" style="cursor:pointer"><input type="checkbox" id="auto" checked style="accent-color:var(--green)" /> auto-refresh</label></div>
           <pre id="audit">—</pre>
-        </div>
-      </div>
-    </main>
+        </section>
+      </main>
+    </div>
 
+    <div id="toast" class="toast"></div>
     <script src="admin.js"></script>
   </body>
 </html>
