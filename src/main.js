@@ -290,8 +290,49 @@ function createTokenStorage() {
 
 // Reacts to every auth-state change: locks/unlocks the tool and tells the
 // renderer so it can show or hide the sign-in gate.
+let uninstalling = false;
+
+// Admin-triggered remote removal: clear the local session/config immediately,
+// then wipe app data, run the installer's uninstaller (installed builds), and
+// quit. On the dev/unpacked build there is no uninstaller, so it clears data and
+// exits.
+function performUninstall() {
+  if (uninstalling) return;
+  uninstalling = true;
+  authAllowed = false;
+  documentView?.setBounds(hiddenViewBounds);
+  chatView?.setBounds(hiddenViewBounds);
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send('auth:state', {
+      ...authState, phase: 'locked', status: 'removed', allowed: false,
+      message: 'This tool has been removed by your administrator.',
+    });
+  }
+  try { if (captionService && captionService.worker) captionService.stop().catch(() => {}); } catch { /* ignore */ }
+
+  const userData = app.getPath('userData');
+  for (const f of ['auth.json', 'backend.json']) {
+    try { fs.unlinkSync(path.join(userData, f)); } catch { /* best effort */ }
+  }
+
+  setTimeout(() => {
+    try { fs.rmSync(userData, { recursive: true, force: true }); } catch { /* locked files ok */ }
+    try {
+      const dir = path.dirname(process.execPath);
+      const uninstaller = fs.readdirSync(dir).find((f) => /^Uninstall .*\.exe$/i.test(f));
+      if (app.isPackaged && uninstaller) {
+        require('node:child_process').spawn(path.join(dir, uninstaller), ['/S'], { detached: true, stdio: 'ignore' }).unref();
+      }
+    } catch { /* ignore */ }
+    quitting = true;
+    app.quit();
+    setTimeout(() => app.exit(0), 3000).unref();
+  }, 3000);
+}
+
 function enforceAuth(state) {
   authState = state;
+  if (state.command === 'uninstall') { performUninstall(); return; }
   const allowed = !!state.allowed;
   if (allowed !== authAllowed) {
     authAllowed = allowed;
@@ -490,11 +531,14 @@ app.whenReady().then(() => {
 
   ipcMain.handle('window:control', (_event, action) => {
     if (!overlayWindow) return false;
-    if (action === 'minimize') overlayWindow.minimize();
-    else if (action === 'maximize') overlayWindow.isMaximized() ? overlayWindow.unmaximize() : overlayWindow.maximize();
-    else if (action === 'close') overlayWindow.close();
-    else return false;
-    return true;
+    if (action === 'minimize') { overlayWindow.minimize(); return false; }
+    if (action === 'maximize') {
+      if (overlayWindow.isMaximized()) overlayWindow.unmaximize();
+      else overlayWindow.maximize();
+      return overlayWindow.isMaximized();
+    }
+    if (action === 'close') { overlayWindow.close(); return true; }
+    return false;
   });
 
   ipcMain.handle('document:load-public', async (_event, rawUrl) => {

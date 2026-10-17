@@ -126,9 +126,14 @@ $('document-form').addEventListener('submit', (event) => {
   event.preventDefault();
   openDocument($('document-url').value);
 });
-// The minus control switches to the compact floating bar. In compact mode it
-// becomes the expand control so the same button returns to the main window.
-$('minimize-button').addEventListener('click', () => window.privacy.toggleCompact());
+// Real window controls plus the compact floating-bar toggle.
+$('compact-button').addEventListener('click', () => window.privacy.toggleCompact());
+$('minimize-button').addEventListener('click', () => window.privacy.controlWindow('minimize'));
+$('maximize-button').addEventListener('click', async () => {
+  const isMax = await window.privacy.controlWindow('maximize');
+  $('maximize-button').querySelector('i').className = `ph ${isMax ? 'ph-copy' : 'ph-square'}`;
+  $('maximize-button').title = isMax ? 'Restore' : 'Maximize';
+});
 document.querySelectorAll('[data-window="close"]').forEach((button) => {
   button.addEventListener('click', () => window.privacy.controlWindow('close'));
 });
@@ -136,9 +141,10 @@ document.querySelectorAll('[data-window="close"]').forEach((button) => {
 window.privacy.onCompactChanged((isCompact) => {
   compact = isCompact;
   document.body.classList.toggle('compact', compact);
-  const button = $('minimize-button');
+  const button = $('compact-button');
   button.setAttribute('aria-label', compact ? 'Expand window' : 'Compact bar');
-  button.querySelector('i').className = `ph ${compact ? 'ph-arrows-out-simple' : 'ph-minus'}`;
+  button.title = compact ? 'Expand window' : 'Compact bar';
+  button.querySelector('i').className = `ph ${compact ? 'ph-arrows-out-simple' : 'ph-arrows-in-simple'}`;
   updateDocumentBounds();
   updateChatBounds();
 });

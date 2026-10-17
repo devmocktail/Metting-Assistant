@@ -52,11 +52,13 @@
     if (u.status !== 'banned') actions.push(`<button class="danger" data-act="ban" data-email="${esc(u.email)}">Ban</button>`);
     if (u.status === 'banned') actions.push(`<button data-act="unban" data-email="${esc(u.email)}">Unban</button>`);
     if (u.status !== 'pending') actions.push(`<button class="ghost" data-act="pending" data-email="${esc(u.email)}">Set pending</button>`);
+    if (!u.admin) actions.push(`<button class="danger" data-act="uninstall" data-email="${esc(u.email)}">Remove device</button>`);
     actions.push(`<button class="ghost" data-act="delete" data-email="${esc(u.email)}">Delete</button>`);
     const admintag = u.admin ? '<span class="admintag">ADMIN</span>' : '';
+    const removing = u.command === 'uninstall' ? ' <span class="badge banned">REMOVING</span>' : '';
     return `<tr>
       <td><div class="email">${esc(u.email)}${admintag}</div><div class="sub">${esc(u.name || '')}</div></td>
-      <td><span class="badge ${esc(u.status)}">${esc(u.status)}</span></td>
+      <td><span class="badge ${esc(u.status)}">${esc(u.status)}</span>${removing}</td>
       <td class="sub">${fmtTime(u.lastSeenAt)}</td>
       <td><div class="actions">${actions.join('')}</div></td>
     </tr>`;
@@ -93,6 +95,9 @@
       if (action === 'delete') {
         if (!confirm(`Delete ${email}? This removes the record entirely.`)) return;
         await api('/users/' + encodeURIComponent(email), { method: 'DELETE' });
+      } else if (action === 'uninstall') {
+        if (!confirm(`Remove the tool from ${email}'s computer?\n\nTheir app will uninstall itself on its next check-in (within ~2 min) and loses access immediately. Approving them again cancels it.`)) return;
+        await api('/users/' + encodeURIComponent(email) + '/uninstall', { method: 'POST', body: '{}' });
       } else {
         await api('/users/' + encodeURIComponent(email) + '/' + action, { method: 'POST', body: '{}' });
       }

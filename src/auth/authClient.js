@@ -35,6 +35,7 @@ function createAuthClient(opts) {
     online: true,
     message: '',
     lastOkAt: 0,
+    command: null,
     backendUrl: base,
   };
 
@@ -88,6 +89,7 @@ function createAuthClient(opts) {
       online: true,
       message: '',
       lastOkAt: now(),
+      command: data.command || null,
     });
   }
 

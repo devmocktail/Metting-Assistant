@@ -111,6 +111,7 @@ function createServer({ config, store, exchangeCodeForIdentity = defaultExchange
       allowed: users.isAllowed(config, current),
       status: current.status,
       admin: users.isAdminEmail(config, current.email),
+      command: current.command || null,
     });
   }));
 
@@ -153,6 +154,12 @@ function createServer({ config, store, exchangeCodeForIdentity = defaultExchange
       res.json({ user: users.summary(user) });
     }));
   }
+
+  // Flags the user's device to self-remove on its next heartbeat.
+  adminApi.post('/users/:email/uninstall', wrap(async (req, res) => {
+    const user = await users.uninstall(store, config, adminActor(req), targetEmail(req));
+    res.json({ user: users.summary(user) });
+  }));
 
   adminApi.delete('/users/:email', wrap(async (req, res) => {
     const existed = await users.remove(store, adminActor(req), targetEmail(req));

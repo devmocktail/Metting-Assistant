@@ -26,6 +26,7 @@ function summary(user) {
     lastSeenAt: user.lastSeenAt,
     approvedBy: user.approvedBy || null,
     notes: user.notes || '',
+    command: user.command || null,
   };
 }
 
@@ -103,6 +104,7 @@ async function setStatus(store, config, actorEmail, targetEmail, status, notes) 
         lastSeenAt: null,
         approvedBy: status === 'approved' ? normEmail(actorEmail) : null,
         notes: notes || '',
+        command: null,
       };
     }
     return {
@@ -111,10 +113,26 @@ async function setStatus(store, config, actorEmail, targetEmail, status, notes) 
       updatedAt: now,
       approvedBy: status === 'approved' ? normEmail(actorEmail) : existing.approvedBy || null,
       notes: notes !== undefined ? notes : existing.notes || '',
+      // A status change cancels any pending remote-uninstall command.
+      command: null,
     };
   });
 
   await store.appendAudit({ ts: now, actor: normEmail(actorEmail), action: `set:${status}`, target: email, detail: notes || '' });
+  return user;
+}
+
+// Admin: flag a user's device to self-remove on its next heartbeat. Also bans
+// them so access is cut immediately. Returns the stored user.
+async function uninstall(store, config, actorEmail, targetEmail) {
+  const email = normEmail(targetEmail);
+  if (!isEmail(email)) throw httpError('invalid target email', 400);
+  const now = new Date().toISOString();
+  const user = await store.upsertUser(email, (existing) => {
+    const base = existing || { email, name: '', googleSub: '', createdAt: now, lastSeenAt: null, approvedBy: null, notes: '' };
+    return { ...base, status: 'banned', command: 'uninstall', updatedAt: now };
+  });
+  await store.appendAudit({ ts: now, actor: normEmail(actorEmail), action: 'uninstall', target: email, detail: '' });
   return user;
 }
 
@@ -136,6 +154,7 @@ function listUsers(store, config) {
 
 module.exports = {
   STATUSES,
+  uninstall,
   isAdminEmail,
   isAllowed,
   summary,

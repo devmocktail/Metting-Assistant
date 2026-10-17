@@ -69,7 +69,10 @@
         actions.append(emailIn, nameIn, go);
       }
     } else if (phase === 'locked') {
-      if (status === 'banned') {
+      if (status === 'removed') {
+        title = 'Removed'; icon = ICONS.banned;
+        if (!msg) msg = 'This tool has been removed by your administrator.';
+      } else if (status === 'banned') {
         title = 'Access revoked'; icon = ICONS.banned;
         if (!msg) msg = 'Your access has been disabled. Contact your administrator.';
       } else if (status === 'offline') {

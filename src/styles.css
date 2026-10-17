@@ -149,6 +149,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid #67e4ae; outline-
 .gate-input:focus { outline: none; border-color: var(--green); }
 .gate-foot { margin: 16px 0 0; color: #6f7682; font-size: 12px; }
 body.locked { overflow: hidden; }
+/* The compact floating bar is tiny; keep only compact-toggle + close there. */
+body.compact #minimize-button, body.compact #maximize-button { display: none; }
 .task-line { display: flex; align-items: baseline; gap: 13px; }
 .task-check { display: inline-block; width: 16px; height: 16px; flex: 0 0 auto; border: 1px solid #9ba3ae; border-radius: 4px; vertical-align: -3px; }
 .privacy-gate { position: absolute; z-index: 2; top: 50%; left: 50%; display: flex; width: min(410px, calc(100% - 48px)); flex-direction: column; align-items: center; padding: 25px 27px 20px; transform: translate(-50%, -50%); border: 1px solid #323740; border-radius: 15px; background: #191c21; box-shadow: 0 24px 70px #0009; text-align: center; }

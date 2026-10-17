@@ -35,6 +35,7 @@ final class Users
             'lastSeenAt' => $u['lastSeenAt'] ?? null,
             'approvedBy' => $u['approvedBy'] ?? null,
             'notes'      => $u['notes'] ?? '',
+            'command'    => $u['command'] ?? null,
         ];
     }
 
@@ -129,6 +130,7 @@ final class Users
                     'lastSeenAt' => null,
                     'approvedBy' => $status === 'approved' ? $actor : null,
                     'notes'      => $notes ?? '',
+                    'command'    => null,
                 ];
             }
             $existing['status'] = $status;
@@ -137,10 +139,32 @@ final class Users
             if ($notes !== null) {
                 $existing['notes'] = $notes;
             }
+            // A status change cancels any pending remote-uninstall command.
+            $existing['command'] = null;
             return $existing;
         });
 
         $store->appendAudit(['ts' => $now, 'actor' => $actor, 'action' => 'set:' . $status, 'target' => $email, 'detail' => $notes ?? '']);
+        return $user;
+    }
+
+    // Admin: flag a user's device to self-remove on its next heartbeat; also bans
+    // them so access is cut immediately.
+    public static function uninstall(Store $store, array $config, string $actorEmail, string $targetEmail): array
+    {
+        $email = strtolower(trim($targetEmail));
+        if (!Google::isEmail($email)) {
+            throw new HttpException('invalid target email', 400);
+        }
+        $now = self::nowIso();
+        $user = $store->upsertUser($email, function ($existing) use ($email, $now) {
+            $base = $existing ?? ['email' => $email, 'name' => '', 'googleSub' => '', 'createdAt' => $now, 'lastSeenAt' => null, 'approvedBy' => null, 'notes' => ''];
+            $base['status'] = 'banned';
+            $base['command'] = 'uninstall';
+            $base['updatedAt'] = $now;
+            return $base;
+        });
+        $store->appendAudit(['ts' => $now, 'actor' => strtolower(trim($actorEmail)), 'action' => 'uninstall', 'target' => $email, 'detail' => '']);
         return $user;
     }
 

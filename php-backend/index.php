@@ -134,6 +134,7 @@ try {
             'allowed' => Users::isAllowed($config, $current),
             'status'  => $current['status'],
             'admin'   => Users::isAdmin($config, $current['email']),
+            'command' => $current['command'] ?? null,
         ]);
     }
 
@@ -174,6 +175,14 @@ try {
             }
             $map = ['approve' => 'approved', 'ban' => 'banned', 'unban' => 'approved', 'pending' => 'pending'];
             $user = Users::setStatus($store, $config, $actor, $email, $map[$m[2]]);
+            Http::json(['user' => Users::summary($user)]);
+        }
+        if ($method === 'POST' && preg_match('#^/users/([^/]+)/uninstall$#', $sub, $m)) {
+            $email = strtolower(urldecode($m[1]));
+            if (!Google::isEmail($email)) {
+                throw new HttpException('invalid target email', 400);
+            }
+            $user = Users::uninstall($store, $config, $actor, $email);
             Http::json(['user' => Users::summary($user)]);
         }
         if ($method === 'DELETE' && preg_match('#^/users/([^/]+)$#', $sub, $m)) {

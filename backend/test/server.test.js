@@ -131,6 +131,29 @@ test('DEV_AUTH_SECRET gates stub sign-in', async () => {
   } finally { await s.close(); }
 });
 
+test('admin uninstall sets command + bans; a status change clears it', async () => {
+  const s = await startTestServer();
+  try {
+    let r = await jreq(s.base, '/auth/google', { method: 'POST', body: JSON.stringify({ idToken: 'stub:gone@corp.com' }) });
+    const auth = { Authorization: 'Bearer ' + r.body.token };
+
+    r = await jreq(s.base, `/admin/api/users/${enc('gone@corp.com')}/uninstall`, { method: 'POST', headers: ADMIN, body: '{}' });
+    assert.equal(r.body.user.status, 'banned');
+    assert.equal(r.body.user.command, 'uninstall');
+
+    r = await jreq(s.base, '/me', { headers: auth });
+    assert.equal(r.body.command, 'uninstall');
+    assert.equal(r.body.allowed, false);
+
+    // Re-approving cancels the pending uninstall.
+    r = await jreq(s.base, `/admin/api/users/${enc('gone@corp.com')}/approve`, { method: 'POST', headers: ADMIN, body: '{}' });
+    assert.equal(r.body.user.command, null);
+    r = await jreq(s.base, '/me', { headers: auth });
+    assert.equal(r.body.command, null);
+    assert.equal(r.body.allowed, true);
+  } finally { await s.close(); }
+});
+
 test('google code-exchange path issues a session (injected exchanger)', async () => {
   const fakeExchange = async (_cfg, body) => {
     assert.equal(body.code, 'abc');
