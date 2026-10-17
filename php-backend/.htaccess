@@ -1,0 +1,24 @@
+# Pass the Authorization header through to PHP (for Bearer session tokens).
+CGIPassAuth On
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Also expose Authorization as an env var (belt and suspenders).
+  RewriteCond %{HTTP:Authorization} ^(.+)$
+  RewriteRule ^ - [E=HTTP_AUTHORIZATION:%1]
+
+  # Block direct access to source, config, data, and tests.
+  RewriteRule ^(app|data|tests)/ - [F,L]
+  RewriteRule ^config\.php$ - [F,L]
+  RewriteRule ^dev-php\.ini$ - [F,L]
+  RewriteRule ^router\.php$ - [F,L]
+
+  # Serve real files/dirs as-is (admin page + its assets).
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else -> front controller.
+  RewriteRule ^ index.php [L]
+</IfModule>

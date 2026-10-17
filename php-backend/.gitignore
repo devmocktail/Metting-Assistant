@@ -1,0 +1,5 @@
+config.php
+data/
+dev-php.ini
+vendor/
+*.log

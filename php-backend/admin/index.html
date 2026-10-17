@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
+    <title>Meeting Assistant · Admin</title>
+    <style>
+      :root { color-scheme: dark; --green:#50dea3; --red:#ff6b6b; --amber:#daa744; --bg:#0d0f12; --panel:#15181c; --line:#262b31; --text:#e3e6ea; --muted:#8b929c; }
+      * { box-sizing: border-box; }
+      body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 Inter,"Segoe UI",system-ui,Arial,sans-serif; }
+      header { display:flex; align-items:center; gap:12px; padding:16px 22px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
+      header h1 { margin:0; font-size:16px; font-weight:750; letter-spacing:-.3px; }
+      header .spacer { flex:1; }
+      .pill { padding:4px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; }
+      main { padding:22px; max-width:1080px; margin:0 auto; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:18px; }
+      .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+      input, select, button { font:inherit; }
+      input[type=text], input[type=email] { height:38px; padding:0 12px; border:1px solid var(--line); border-radius:9px; background:#101215; color:var(--text); min-width:220px; }
+      input:focus { outline:none; border-color:var(--green); }
+      button { height:36px; padding:0 14px; border:1px solid var(--line); border-radius:9px; background:#1e2227; color:var(--text); cursor:pointer; font-weight:600; }
+      button:hover { background:#272c33; }
+      button.primary { background:var(--green); color:#07251a; border-color:transparent; }
+      button.danger { color:#2a0d0d; background:var(--red); border-color:transparent; }
+      button.ghost { background:transparent; }
+      button:disabled { opacity:.5; cursor:not-allowed; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { text-align:left; padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+      th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
+      td .email { font-weight:650; }
+      td .sub { color:var(--muted); font-size:12px; }
+      .badge { padding:3px 9px; border-radius:999px; font-size:12px; font-weight:700; }
+      .badge.approved { color:#07251a; background:var(--green); }
+      .badge.pending { color:#2a1f05; background:var(--amber); }
+      .badge.banned { color:#2a0d0d; background:var(--red); }
+      .badge.unknown { color:var(--muted); background:#2a2e34; }
+      .admintag { margin-left:6px; color:var(--green); font-size:11px; border:1px solid var(--green); padding:1px 6px; border-radius:6px; }
+      .muted { color:var(--muted); }
+      .actions { display:flex; gap:6px; flex-wrap:wrap; }
+      .notice { padding:10px 12px; border-radius:9px; background:#241216; border:1px solid #502; color:#ffb4b4; margin:10px 0; display:none; }
+      .ok { color:var(--green); }
+      pre { white-space:pre-wrap; word-break:break-word; max-height:300px; overflow:auto; background:#101215; border:1px solid var(--line); border-radius:9px; padding:12px; font-size:12px; }
+      .gate { max-width:460px; margin:60px auto; }
+      .hidden { display:none !important; }
+      h2 { font-size:14px; margin:0 0 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>A2solveX · Admin</h1>
+      <span class="pill" id="mode-pill">—</span>
+      <div class="spacer"></div>
+      <span class="pill" id="count-pill">0 users</span>
+      <button class="ghost" id="refresh-btn" title="Refresh">Refresh</button>
+      <button class="ghost" id="signout-btn" title="Forget admin token">Sign out</button>
+    </header>
+
+    <main>
+      <div id="gate" class="card gate hidden">
+        <h2>Admin access</h2>
+        <p class="muted">Enter the admin token (the <code>ADMIN_TOKEN</code> from the backend environment).</p>
+        <div class="row">
+          <input type="text" id="token-input" placeholder="Admin token" autocomplete="off" />
+          <button class="primary" id="token-save">Unlock</button>
+        </div>
+        <div class="notice" id="gate-notice"></div>
+      </div>
+
+      <div id="app" class="hidden">
+        <div class="notice" id="notice"></div>
+
+        <div class="card">
+          <h2>Add or pre-approve an email</h2>
+          <div class="row">
+            <input type="email" id="add-email" placeholder="person@gmail.com" autocomplete="off" />
+            <select id="add-status">
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="banned">Banned</option>
+            </select>
+            <button class="primary" id="add-btn">Save</button>
+            <span class="muted">Pre-set a status before the user's first sign-in.</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">Users</h2>
+            <label class="muted"><input type="checkbox" id="auto" checked /> auto-refresh</label>
+          </div>
+          <table>
+            <thead><tr><th>User</th><th>Status</th><th>Last seen</th><th>Actions</th></tr></thead>
+            <tbody id="users-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2>Audit log</h2>
+          <pre id="audit">—</pre>
+        </div>
+      </div>
+    </main>
+
+    <script src="admin.js"></script>
+  </body>
+</html>

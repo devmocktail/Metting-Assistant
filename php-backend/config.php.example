@@ -1,0 +1,22 @@
+<?php
+// Copy this to config.php on the server and fill it in. Keep config.php OUT of
+// git (it holds secrets). On Hostinger, upload config.php via File Manager.
+return [
+  'AUTH_MODE'           => 'google',            // 'google' (production) or 'stub' (local testing only)
+  'STORE'               => 'mysql',             // 'mysql' (Hostinger) or 'sqlite' (local testing)
+  'SESSION_SECRET'      => '',                   // long random string (openssl rand -hex 32)
+  'ADMIN_TOKEN'         => '',                   // password for the /admin page + API
+  'ADMIN_EMAILS'        => 'you@gmail.com',      // comma-separated; these are auto-approved admins
+  'GOOGLE_CLIENT_ID'    => '',
+  'GOOGLE_CLIENT_SECRET'=> '',
+  'MYSQL_HOST'          => 'localhost',
+  'MYSQL_PORT'          => '3306',
+  'MYSQL_USER'          => '',
+  'MYSQL_PASSWORD'      => '',
+  'MYSQL_DATABASE'      => '',
+  // Optional:
+  // 'HEARTBEAT_INTERVAL_MS' => '120000',
+  // 'OFFLINE_GRACE_MS'      => '600000',
+  // 'SESSION_TTL_MS'        => '604800000',
+  // 'DEV_AUTH_SECRET'       => '',
+];
