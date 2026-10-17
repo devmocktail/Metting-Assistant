@@ -30,6 +30,11 @@ function buildConfig(overrides = {}) {
       if (!env.UPSTASH_REDIS_REST_URL) missing.push('UPSTASH_REDIS_REST_URL');
       if (!env.UPSTASH_REDIS_REST_TOKEN) missing.push('UPSTASH_REDIS_REST_TOKEN');
     }
+    if ((env.STORE || 'json').toLowerCase() === 'mysql') {
+      for (const k of ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE']) {
+        if (!env[k]) missing.push(k);
+      }
+    }
     if (missing.length) {
       throw new Error(`Missing required production env vars: ${missing.join(', ')}`);
     }
@@ -63,6 +68,11 @@ function buildConfig(overrides = {}) {
     dataDir: env.DATA_DIR || './data',
     upstashUrl: env.UPSTASH_REDIS_REST_URL || '',
     upstashToken: env.UPSTASH_REDIS_REST_TOKEN || '',
+    mysqlHost: env.MYSQL_HOST || '',
+    mysqlPort: toInt(env.MYSQL_PORT, 3306),
+    mysqlUser: env.MYSQL_USER || '',
+    mysqlPassword: env.MYSQL_PASSWORD || '',
+    mysqlDatabase: env.MYSQL_DATABASE || '',
     devAuthSecret: env.DEV_AUTH_SECRET || '',
     warnings,
   };

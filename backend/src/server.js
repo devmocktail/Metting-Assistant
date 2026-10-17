@@ -32,6 +32,19 @@ function createServer({ config, store, exchangeCodeForIdentity = defaultExchange
   app.disable('x-powered-by');
   app.use(express.json({ limit: '32kb' }));
 
+  // --- root landing (friendly status page; this is an API otherwise) ---
+  app.get('/', (_req, res) => {
+    res.type('html').send(`<!doctype html><meta charset="utf-8" />
+<title>Meeting Assistant · backend</title>
+<body style="font-family:system-ui,Segoe UI,sans-serif;background:#0d0f12;color:#e3e6ea;margin:0;padding:48px;line-height:1.6">
+  <h2 style="margin:0 0 6px">A2solveX Meeting Assistant — backend</h2>
+  <p>Status: <b style="color:#50dea3">running</b> · auth mode: <b>${config.authMode}</b></p>
+  <p style="margin-top:22px"><a href="/admin" style="color:#50dea3;font-weight:700">Open the admin page →</a></p>
+  <p style="color:#8b929c">This is an API. Health: <a href="/healthz" style="color:#8b929c">/healthz</a>.
+  Sign-in and user management happen under <code>/auth</code>, <code>/me</code>, and <code>/admin</code>.</p>
+</body>`);
+  });
+
   // --- health + public config ---
   app.get('/healthz', (_req, res) => res.json({ ok: true, authMode: config.authMode }));
 
