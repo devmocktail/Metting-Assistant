@@ -18,7 +18,7 @@ function stripOpen(string $php): string
 }
 
 // 1) Classes, in dependency order (Http/HttpException first).
-$classFiles = ['app/Http.php', 'app/Config.php', 'app/Tokens.php', 'app/Store.php', 'app/Google.php', 'app/Users.php'];
+$classFiles = ['app/Http.php', 'app/Config.php', 'app/Tokens.php', 'app/Store.php', 'app/Google.php', 'app/Razorpay.php', 'app/Users.php'];
 $classes = '';
 foreach ($classFiles as $f) {
     $classes .= "\n// ===== {$f} =====\n" . stripOpen(file_get_contents("$root/$f")) . "\n";

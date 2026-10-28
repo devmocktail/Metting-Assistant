@@ -5,6 +5,8 @@
   let ready = false;
   let stopping = false;
   let busy = null;  // model being downloaded or speed-checked
+  let autoStarted = false;  // the one-time automatic setup download has been kicked off
+  let allowed = false;      // the tool is unlocked (signed in + approved/trial)
   let selectedProfile = localStorage.getItem('captionProfile') || 'parakeet';
   let selectedDevice = localStorage.getItem('captionDevice') || '';
   const size = bytes => (bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.round(bytes / 1e6)} MB`);
@@ -45,80 +47,48 @@
     if (!active) $('caption-meter').value = 0;
   }
 
-  function tag(text, suggested = false) {
-    const element = document.createElement('em');
-    element.className = `model-tag${suggested ? ' suggested' : ''}`;
-    element.textContent = text;
-    return element;
-  }
-
-  // Models ranked best first; each row offers download, cancel, or a speed check.
-  function renderModels(models) {
-    const list = $('caption-engine-options');
-    list.replaceChildren();
-    for (const m of models) {
-      const row = document.createElement('div');
-      row.className = 'model-row';
-      row.dataset.model = m.id;
-      const label = choice(row, 'caption-engine', m.id, '', '', m.id === selectedProfile, !m.installed,
-        () => { selectedProfile = m.id; localStorage.setItem('captionProfile', m.id); });
-      const title = document.createElement('span');
-      title.className = 'model-title';
-      title.append(m.name, tag(m.label));
-      if (m.recommended) title.append(tag('Suggested for this PC', true));
-      const summary = document.createElement('small');
-      summary.textContent = m.summary;
-      const status = document.createElement('small');
-      status.className = 'model-status';
-      status.textContent = m.installed ? (m.checkNote || 'Installed.') : `${size(m.downloadBytes)} download · ${m.fitNote}`;
-      const progress = document.createElement('progress');
-      progress.max = 1;
-      progress.hidden = true;
-      label.querySelector('span').replaceChildren(title, summary, status, progress);
-      if (!m.installed || !m.checkNote) {
-        const action = document.createElement('button');
-        action.type = 'button';
-        action.className = 'secondary-button model-action';
-        action.textContent = m.installed ? 'Check speed' : 'Download';
-        action.disabled = busy !== null && busy !== m.id;
-        action.addEventListener('click', () => (busy === m.id ? window.privacy.cancelModelDownload(m.id) : prepareModel(m.id)));
-        row.append(action);
-      }
-      list.append(row);
-    }
+  // One model, chosen automatically — the user only sees an install prompt, never
+  // a picker. `installed` hides the panel; `busyNow` turns the button into Cancel.
+  function setInstallUI({ installed, note }) {
+    const panel = $('caption-install');
+    if (!panel) return;
+    panel.hidden = !!installed;
+    if (installed) return;
+    if (note) $('caption-install-note').textContent = note;
   }
 
   async function prepareModel(id) {
     busy = id;
     notice();
     updateStart();
-    for (const button of document.querySelectorAll('.model-action')) {
-      const mine = button.closest('.model-row').dataset.model === id;
-      button.disabled = !mine;
-      if (mine) button.textContent = 'Cancel';
-    }
+    setInstallUI({ installed: false, note: 'Preparing captions… starting setup.' });
     const result = await window.privacy.downloadModel(id);
     busy = null;
     await configure();
-    if (!result.ok) notice(result.error);
+    if (!result.ok) {
+      // There is no button to retry — keep setting up automatically.
+      const prog = $('caption-install-progress'); if (prog) prog.hidden = true;
+      setInstallUI({ installed: false, note: 'Connection issue — retrying automatically…' });
+      autoStarted = false;
+      setTimeout(() => { if (allowed) configure(); }, 10000);
+    }
   }
 
   function showModelProgress(event) {
-    const row = $('caption-engine-options').querySelector(`[data-model="${event.id}"]`);
-    if (!row) return;
-    const status = row.querySelector('.model-status');
-    const progress = row.querySelector('progress');
+    const note = $('caption-install-note');
+    const prog = $('caption-install-progress');
+    if (!note || !prog) return;
     if (event.phase === 'download' || event.phase === 'verify') {
-      progress.hidden = false;
-      progress.value = event.total ? event.done / event.total : 0;
-      status.textContent = event.phase === 'verify' ? 'Verifying the download…'
-        : `Downloading ${size(event.done)} of ${size(event.total)}… It resumes if interrupted.`;
+      prog.hidden = false;
+      prog.value = event.total ? event.done / event.total : 0;
+      note.textContent = event.phase === 'verify' ? 'Verifying… almost done.'
+        : `Preparing captions… ${event.total ? Math.round((event.done / event.total) * 100) : 0}%`;
     } else if (event.phase === 'installed' || event.phase === 'checking') {
-      progress.hidden = true;
-      status.textContent = 'Checking recognition speed on this PC…';
+      prog.hidden = true;
+      note.textContent = 'Finishing on-device setup…';
     } else if (event.phase === 'error') {
-      progress.hidden = true;
-      status.textContent = event.message;
+      prog.hidden = true;
+      note.textContent = event.message;
     }
   }
 
@@ -147,10 +117,16 @@
   async function configure() {
     $('start-captions').disabled = true;
     const config = await window.privacy.captionConfiguration();
-    if (!config.models.some(m => m.id === selectedProfile && m.installed)) {
-      selectedProfile = config.models.find(m => m.installed)?.id || 'parakeet';
-    }
-    renderModels(config.models);
+    // Pick the single model automatically: an already-installed one, else the
+    // recommended fit for this PC, else Parakeet. The user never chooses.
+    const models = config.models || [];
+    const chosen = models.find(m => m.installed)
+      || models.find(m => m.recommended)
+      || models.find(m => m.id === 'parakeet')
+      || models[0];
+    selectedProfile = chosen ? chosen.id : 'parakeet';
+    const installed = !!(chosen && chosen.installed);
+
     if (!config.devices.some(d => d.id === selectedDevice)) selectedDevice = '';
     const devices = [{ id: '', name: 'System default (follows device changes)' }, ...config.devices];
     $('caption-device-options').replaceChildren();
@@ -158,14 +134,28 @@
       choice($('caption-device-options'), 'caption-device', d.id, d.name, '', d.id === selectedDevice, false,
         () => { selectedDevice = d.id; localStorage.setItem('captionDevice', d.id); });
     }
-    ready = config.models.some(m => m.installed) && !config.runtimeMissing;
+
+    ready = installed && !config.runtimeMissing;
     setStatus('Audio off');
-    const suggested = config.models.find(m => m.recommended);
-    if (config.runtimeMissing) notice('Caption components are missing. Reinstall the app.');
-    else if (!config.models.some(m => m.installed)) {
-      $('caption-settings').open = true;
-      notice(`Download a speech model to start captions${suggested ? `; ${suggested.name} is suggested for this PC` : ''}.`);
-    } else if (config.deviceError) notice(config.deviceError);
+
+    if (config.runtimeMissing) {
+      setInstallUI({ installed: true }); // nothing to download fixes this
+      notice('Caption components are missing. Reinstall the app.');
+    } else if (!installed) {
+      if (!autoStarted && busy === null && allowed) {
+        // First launch: set the caption engine up automatically — no button to click.
+        autoStarted = true;
+        setInstallUI({ installed: false, note: 'Preparing captions… one-time setup.' });
+        notice('');
+        prepareModel(selectedProfile);
+      } else {
+        setInstallUI({ installed: false, note: 'Preparing captions… one-time setup.' });
+        notice('');
+      }
+    } else {
+      setInstallUI({ installed: true });
+      if (config.deviceError) notice(config.deviceError);
+    }
   }
 
   // Start or stop listening. Shared by the Captions tab button and the
@@ -250,5 +240,18 @@
       }
     }
   });
+  // Kick off the automatic caption-engine setup as soon as the tool is unlocked.
+  if (window.auth) {
+    window.auth.getState().then((s) => {
+      allowed = !!(s && s.allowed);
+      if (allowed) configure();
+    }).catch(() => {});
+    window.auth.onAuthState((s) => {
+      const was = allowed;
+      allowed = !!(s && s.allowed);
+      if (allowed && !was) configure();
+    });
+  }
+
   configure().catch(() => { notice('Caption setup could not be read. Restart the application.'); });
 })();

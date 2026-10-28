@@ -6,6 +6,7 @@ const compactListeners = new Set();
 const captionListeners = new Set();
 const chatStateListeners = new Set();
 const authStateListeners = new Set();
+const windowStateListeners = new Set();
 ipcRenderer.on('document:layout-needed', () => {
   for (const listener of layoutListeners) listener();
 });
@@ -14,6 +15,9 @@ ipcRenderer.on('document:title', (_event, title) => {
 });
 ipcRenderer.on('window:compact-changed', (_event, compact) => {
   for (const listener of compactListeners) listener(compact);
+});
+ipcRenderer.on('window:state', (_event, state) => {
+  for (const listener of windowStateListeners) listener(state);
 });
 ipcRenderer.on('captions:event', (_event, payload) => {
   for (const listener of captionListeners) listener(payload);
@@ -39,6 +43,10 @@ contextBridge.exposeInMainWorld('privacy', {
   downloadModel: (id) => ipcRenderer.invoke('models:download', id),
   cancelModelDownload: (id) => ipcRenderer.invoke('models:cancel', id),
   controlWindow: (action) => ipcRenderer.invoke('window:control', action),
+  // Manual window dragging (native app-region drag is unreliable here).
+  windowDragStart: () => ipcRenderer.invoke('window:drag-start'),
+  windowDragMove: (delta) => ipcRenderer.invoke('window:drag-move', delta),
+  windowDragEnd: () => ipcRenderer.invoke('window:drag-end'),
   loadPublicDocument: (url) => ipcRenderer.invoke('document:load-public', url),
   setDocumentBounds: (bounds) => ipcRenderer.invoke('document:set-bounds', bounds),
   reloadDocument: () => ipcRenderer.invoke('document:reload'),
@@ -49,7 +57,9 @@ contextBridge.exposeInMainWorld('privacy', {
   reloadChat: () => ipcRenderer.invoke('chat:reload'),
   newChat: () => ipcRenderer.invoke('chat:home'),
   openChatExternal: () => ipcRenderer.invoke('chat:open-external'),
-  setChatComposer: (text) => ipcRenderer.invoke('chat:set-composer', text),
+  setChatComposer: (payload) => ipcRenderer.invoke('chat:set-composer', payload),
+  // Full-screen screenshot pasted into the ChatGPT composer as an image attachment.
+  captureScreenToChat: () => ipcRenderer.invoke('code:capture-to-chat'),
   onChatState: (listener) => {
     if (typeof listener === 'function') chatStateListeners.add(listener);
   },
@@ -62,6 +72,9 @@ contextBridge.exposeInMainWorld('privacy', {
   onCompactChanged: (listener) => {
     if (typeof listener === 'function') compactListeners.add(listener);
   },
+  onWindowState: (listener) => {
+    if (typeof listener === 'function') windowStateListeners.add(listener);
+  },
   onCaptionsEvent: (listener) => {
     if (typeof listener === 'function') captionListeners.add(listener);
   },
@@ -69,10 +82,12 @@ contextBridge.exposeInMainWorld('privacy', {
 
 contextBridge.exposeInMainWorld('auth', {
   getState: () => ipcRenderer.invoke('auth:get-state'),
-  signInGoogle: () => ipcRenderer.invoke('auth:signin-google'),
-  signInDev: (email, name) => ipcRenderer.invoke('auth:signin-dev', { email, name }),
+  signInGoogle: (plan) => ipcRenderer.invoke('auth:signin-google', plan),
+  signInDev: (email, name, plan) => ipcRenderer.invoke('auth:signin-dev', { email, name, plan }),
   signOut: () => ipcRenderer.invoke('auth:signout'),
   recheck: () => ipcRenderer.invoke('auth:recheck'),
+  claimDevice: () => ipcRenderer.invoke('auth:claim-device'),
+  subscribe: () => ipcRenderer.invoke('billing:subscribe'),
   onAuthState: (listener) => {
     if (typeof listener === 'function') authStateListeners.add(listener);
   },

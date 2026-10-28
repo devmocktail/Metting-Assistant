@@ -14,6 +14,20 @@ return [
   'MYSQL_USER'          => '',
   'MYSQL_PASSWORD'      => '',
   'MYSQL_DATABASE'      => '',
+  // --- Device binding (stops credential sharing: one account = one machine) ---
+  'DEVICE_BINDING'      => 'true',              // 'false' disables it entirely
+  // How long before a user may self-move their seat to a new machine again (ms). 72h default.
+  // 'DEVICE_MOVE_COOLDOWN_MS' => '259200000',
+  // --- Plans / billing ---
+  'SELF_SERVE'          => 'true',              // 'true' = new sign-ins get an instant free trial; 'false' = wait for admin approval
+  'TRIAL_DAYS'          => '7',                 // free-trial length
+  'PLAN_AMOUNT_INR'     => '999',               // shown in the app + on the checkout page
+  // Razorpay (leave blank to keep the Pro plan disabled; the free trial still works).
+  // Create a monthly ₹999 Plan in the Razorpay dashboard and paste its id as RAZORPAY_PLAN_ID.
+  'RAZORPAY_KEY_ID'     => '',                  // rzp_test_xxx (publishable; sent to the client)
+  'RAZORPAY_KEY_SECRET' => '',                  // kept server-side only
+  'RAZORPAY_PLAN_ID'    => '',                  // plan_xxx for the monthly ₹999 plan
+  'RAZORPAY_WEBHOOK_SECRET' => '',              // set this = the webhook secret you configure in Razorpay
   // Optional:
   // 'HEARTBEAT_INTERVAL_MS' => '120000',
   // 'OFFLINE_GRACE_MS'      => '600000',

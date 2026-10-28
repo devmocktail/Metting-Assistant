@@ -13,6 +13,7 @@ function createAuthClient(opts) {
     now = () => Date.now(),
     heartbeatMs = 120000,
     offlineGraceMs = 600000,
+    device = { id: '', name: '' }, // { id, name } — binds the account to this machine
     onState = () => {},
     runGoogleAuth = null, // async ({clientId}) => { code, codeVerifier, redirectUri }
     setTimeoutImpl = setTimeout,
@@ -37,6 +38,16 @@ function createAuthClient(opts) {
     lastOkAt: 0,
     command: null,
     backendUrl: base,
+    // Plans / billing.
+    selectedPlan: null,        // 'trial' | 'pro' — what the user picked on the pricing screen
+    plan: null,                // the account's current plan from the backend
+    reason: null,              // why locked: trial_expired | payment_required | pending | banned | ...
+    trialDaysLeft: null,
+    trialEndsAt: null,
+    subscriptionStatus: null,
+    currentPeriodEnd: null,
+    planAmountInr: 999,
+    boundDeviceName: null,     // when locked for device_mismatch: the machine that holds the seat
   };
 
   const getState = () => ({ ...state });
@@ -45,9 +56,15 @@ function createAuthClient(opts) {
     try { onState(getState()); } catch { /* listener errors are not fatal */ }
   }
 
+  const deviceId = (device && device.id) || '';
+  const deviceName = (device && device.name) || '';
+
   async function api(path, { method = 'GET', body, authToken } = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (authToken) headers.Authorization = `Bearer ${authToken}`;
+    // Device binding: the machine id travels on every request (sign-in and the
+    // heartbeat /me) so the backend can enforce one-account-one-machine.
+    if (deviceId) { headers['X-Device-Id'] = deviceId; headers['X-Device-Name'] = deviceName; }
     const res = await fetchImpl(base + path, {
       method,
       headers,
@@ -90,6 +107,14 @@ function createAuthClient(opts) {
       message: '',
       lastOkAt: now(),
       command: data.command || null,
+      plan: data.plan ?? null,
+      reason: data.reason ?? null,
+      trialDaysLeft: data.trialDaysLeft ?? null,
+      trialEndsAt: data.trialEndsAt ?? null,
+      subscriptionStatus: data.subscriptionStatus ?? null,
+      currentPeriodEnd: data.currentPeriodEnd ?? null,
+      planAmountInr: data.planAmountInr ?? state.planAmountInr ?? 999,
+      boundDeviceName: data.boundDeviceName ?? null,
     });
   }
 
@@ -143,10 +168,11 @@ function createAuthClient(opts) {
   }
 
   // Local/test sign-in (backend must be in stub mode).
-  async function signInStub(email, name) {
+  async function signInStub(email, name, plan) {
+    if (plan) setState({ selectedPlan: plan });
     const idToken = `stub:${email}${name ? ':' + name : ''}`;
     try {
-      const r = await api('/auth/google', { method: 'POST', body: { idToken } });
+      const r = await api('/auth/google', { method: 'POST', body: { idToken, device: { id: deviceId, name: deviceName } } });
       return consumeAuthResponse(r);
     } catch {
       setState({ message: 'Cannot reach the server.' });
@@ -155,18 +181,51 @@ function createAuthClient(opts) {
   }
 
   // Production Google sign-in via the loopback flow (runGoogleAuth injected).
-  async function signInGoogle() {
+  // `plan` is the pricing-screen choice; it only decides whether the app offers
+  // the Pro checkout after sign-in (the backend always starts everyone on a trial).
+  async function signInGoogle(plan) {
+    if (plan) setState({ selectedPlan: plan });
     if (!runGoogleAuth) { setState({ message: 'Google sign-in is unavailable.' }); return getState(); }
     try {
       const conf = (await loadConfig()) || { googleClientId: state.googleClientId };
       if (!conf.googleClientId) throw new Error('backend has no Google client id configured');
       const { code, codeVerifier, redirectUri } = await runGoogleAuth({ clientId: conf.googleClientId });
-      const r = await api('/auth/google/code', { method: 'POST', body: { code, codeVerifier, redirectUri } });
+      const r = await api('/auth/google/code', { method: 'POST', body: { code, codeVerifier, redirectUri, device: { id: deviceId, name: deviceName } } });
       return consumeAuthResponse(r);
     } catch (e) {
       setState({ phase: token ? 'locked' : 'signin', message: `Google sign-in failed: ${(e && e.message) || 'error'}` });
       return getState();
     }
+  }
+
+  // Ask the backend to create a Razorpay subscription for the signed-in user.
+  // Returns { ok, subscriptionId, keyId, planAmountInr, payUrl } or { ok:false, error }.
+  async function subscribe() {
+    if (!token) return { ok: false, error: 'Sign in first.' };
+    try {
+      const r = await api('/billing/subscribe', { method: 'POST', authToken: token, body: {} });
+      if (r.ok && r.data && r.data.subscriptionId) return { ok: true, ...r.data };
+      return { ok: false, error: (r.data && r.data.error) || 'Could not start the subscription.' };
+    } catch {
+      return { ok: false, error: 'Cannot reach the server.' };
+    }
+  }
+
+  // Self-service "use on this device instead": move the account's single seat to
+  // this machine. Subject to the backend's move cooldown.
+  async function claimDevice() {
+    if (!token) return getState();
+    try {
+      const r = await api('/device/claim', { method: 'POST', authToken: token, body: { device: { id: deviceId, name: deviceName } } });
+      if (r.ok && r.data) {
+        applyAuthData(r.data);
+      } else {
+        setState({ message: (r.data && r.data.error) || 'Could not move the device.' });
+      }
+    } catch {
+      setState({ message: 'Cannot reach the server.' });
+    }
+    return getState();
   }
 
   function signOut() {
@@ -202,7 +261,7 @@ function createAuthClient(opts) {
   }
 
   return {
-    init, recheck, signInStub, signInGoogle, signOut,
+    init, recheck, signInStub, signInGoogle, signOut, subscribe, claimDevice,
     startHeartbeat, stopHeartbeat, getState,
     _setTokenForTest: (t) => { token = t; },
   };

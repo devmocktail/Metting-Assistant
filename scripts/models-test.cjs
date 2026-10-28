@@ -50,7 +50,7 @@ function fakeModel() {
   };
 }
 
-// Serves /org/fake/resolve/abc123/<file> by redirecting to /cdn/<file>, like Hugging Face.
+// Serves /<folder>/<file> by redirecting to /cdn/<file> (exercises redirect-following).
 async function server(data, { cutFirstAfter = 0, ignoreRange = false, corrupt = false, slow = false } = {}) {
   const log = [];
   let cut = cutFirstAfter;

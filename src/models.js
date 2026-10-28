@@ -12,7 +12,7 @@ const { pipeline } = require('node:stream');
 
 const MODELS = [
   {
-    id: 'parakeet', engine: 'parakeet', folder: 'parakeet-en', name: 'Parakeet', label: 'Best for live captions',
+    id: 'parakeet', engine: 'parakeet', folder: 'speech-pack', name: 'Parakeet', label: 'Best for live captions',
     summary: 'Most accurate on accented English in tests here, and the fastest: captions within about a second.',
     memoryGB: 1.0, minMemoryGB: 4, live: true,
     repository: 'csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8', revision: '1ab9323565ddb038682214b292f588070a538ce2',
@@ -24,7 +24,7 @@ const MODELS = [
     ],
   },
   {
-    id: 'whisper-small', engine: 'whisper', folder: 'whisper-small', name: 'Whisper Small', label: 'Alternative',
+    id: 'whisper-small', engine: 'whisper', folder: 'speech-pack-lite', name: 'Whisper Small', label: 'Alternative',
     summary: 'Less accurate than Parakeet on accented speech in tests here, and captions arrive several seconds later.',
     memoryGB: 0.7, minMemoryGB: 4, live: true,
     repository: 'Systran/faster-whisper-small', revision: '536b0662742c02347bc0e980a01041f333bce120',
@@ -36,7 +36,7 @@ const MODELS = [
     ],
   },
   {
-    id: 'whisper-turbo', engine: 'whisper', folder: 'whisper-large-v3-turbo', name: 'Whisper Turbo', label: 'Largest',
+    id: 'whisper-turbo', engine: 'whisper', folder: 'speech-pack-xl', name: 'Whisper Turbo', label: 'Largest',
     summary: 'Largest download. Too slow for live captions on most laptops: about 9 s per update on a 12-core laptop.',
     memoryGB: 1.9, minMemoryGB: 8, live: false,
     repository: 'dropbox-dash/faster-whisper-large-v3-turbo', revision: '0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf',

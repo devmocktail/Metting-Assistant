@@ -17,7 +17,7 @@
         <span class="top-divider" aria-hidden="true"></span>
         <div class="top-spacer"></div>
         <button id="profile-button" class="window-button profile-button" type="button" title="Local session" aria-label="Local session"><i class="ph ph-user-circle" aria-hidden="true"></i></button>
-        <div id="profile-menu" class="profile-menu" hidden><strong>Local session</strong><span id="profile-status">Google Docs access follows the shared link.</span></div>
+        <div id="profile-menu" class="profile-menu" hidden><strong id="profile-name">Account</strong><span id="profile-email" class="profile-email"></span><span id="profile-plan" class="profile-plan"></span><button id="signout-button" class="secondary-button profile-signout" type="button"><i class="ph ph-sign-out" aria-hidden="true"></i> Sign out</button></div>
         <span class="top-divider account-divider" aria-hidden="true"></span>
         <div class="window-controls">
           <button id="compact-button" class="window-button" type="button" title="Compact bar" aria-label="Compact bar"><i class="ph ph-arrows-in-simple" aria-hidden="true"></i></button>
@@ -60,6 +60,7 @@
             <div id="chat-controls" class="document-controls chat-controls" hidden>
               <span id="chat-caption-status" class="status-chip"><span class="audio-state-dot"></span>Audio off</span>
               <button id="chat-start-captions" class="primary-button" type="button" title="Start or stop local caption listening">Start captions</button>
+              <button id="chat-capture" class="primary-button capture-button" type="button" title="Capture your whole screen and attach it to the ChatGPT prompt"><i class="ph ph-camera" aria-hidden="true"></i>&nbsp;Capture</button>
               <label id="feed-toggle" class="feed-toggle" title="Fill ChatGPT's message box with finished captions. Nothing is sent automatically.">
                 <input id="feed-captions" type="checkbox" />
                 <i class="ph ph-closed-captioning" aria-hidden="true"></i>
@@ -91,10 +92,17 @@
 
           <section id="captions-view" class="content-view auxiliary-view" hidden>
             <div class="aux-heading"><div><span class="aux-kicker">LIVE MEETING</span><h1>Captions</h1></div><div class="caption-actions"><span id="caption-status" class="status-chip"><span class="audio-state-dot"></span>Audio off</span><button id="start-captions" class="primary-button" type="button">Start captions</button></div></div>
+            <div id="caption-install" class="caption-install" hidden>
+              <div class="caption-install-icon"><i class="ph ph-spinner-gap" aria-hidden="true"></i></div>
+              <div class="caption-install-copy">
+                <strong>Preparing captions…</strong>
+                <small id="caption-install-note">One-time setup — this runs automatically.</small>
+                <progress id="caption-install-progress" max="1" hidden></progress>
+              </div>
+            </div>
             <div class="caption-tools">
               <details id="caption-settings" class="caption-settings"><summary>Caption settings <i class="ph ph-caret-down" aria-hidden="true"></i></summary>
                 <fieldset id="caption-options"><legend>English · All recognition runs on this PC</legend>
-                  <p class="caption-setting-label">Speech model · downloaded once, best first</p><div id="caption-engine-options" class="caption-choices"></div>
                   <p class="caption-setting-label">Playback output</p><div id="caption-device-options" class="caption-choices"></div>
                   <p class="caption-settings-note">Captures sound played through the selected output. Your microphone is not used. Stop captions to change these settings.</p>
                 </fieldset>
@@ -125,18 +133,23 @@
     </main>
 
     <div id="auth-gate" class="auth-gate" hidden>
+      <div class="auth-bg" aria-hidden="true"></div>
       <div class="auth-gate-top">
         <div class="brand" aria-label="A2solveX"><span class="brand-mark">A2</span><span class="brand-name">A2solve<span class="brand-x">X</span></span></div>
         <div class="auth-top-actions">
-          <button id="gate-compact" class="window-button" type="button" title="Compact bar" aria-label="Compact bar"><i class="ph ph-minus" aria-hidden="true"></i></button>
+          <button id="gate-compact" class="window-button" type="button" title="Compact bar" aria-label="Compact bar"><i class="ph ph-arrows-in-simple" aria-hidden="true"></i></button>
+          <button id="gate-minimize" class="window-button" type="button" title="Minimize" aria-label="Minimize"><i class="ph ph-minus" aria-hidden="true"></i></button>
+          <button id="gate-maximize" class="window-button" type="button" title="Maximize" aria-label="Maximize"><i class="ph ph-square" aria-hidden="true"></i></button>
           <button id="gate-close" class="window-button close-button" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="auth-card">
+        <div class="auth-wordmark" aria-hidden="true">A2solve<span>X</span></div>
         <div class="auth-icon" id="gate-icon"><i class="ph ph-spinner-gap" aria-hidden="true"></i></div>
         <h1 id="gate-title">Checking access…</h1>
         <p id="gate-message" class="gate-message">Connecting to the access server…</p>
         <div id="gate-actions" class="gate-actions"></div>
+        <div id="gate-shield" class="gate-shield" hidden><i class="ph ph-shield-check" aria-hidden="true"></i><span>100% Stealth Shield &amp; Safe</span></div>
         <p id="gate-foot" class="gate-foot"></p>
       </div>
     </div>

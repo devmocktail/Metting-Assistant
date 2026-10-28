@@ -10,7 +10,9 @@
     "build:captions": "powershell -ExecutionPolicy Bypass -File scripts/build-captions.ps1",
     "build:worker": "powershell -ExecutionPolicy Bypass -File scripts/build-worker.ps1",
     "build:icon": "node node_modules/electron/cli.js scripts/make-icon.cjs",
-    "dist": "npm run build:captions && npm run build:worker && electron-builder --win nsis --x64",
+    "obfuscate": "node scripts/obfuscate.cjs",
+    "dist": "npm run build:captions && npm run build:worker && node scripts/obfuscate.cjs && electron-builder --win nsis --x64",
+    "dist:fast": "node scripts/obfuscate.cjs && electron-builder --win nsis --x64",
     "build:captions-windows-ai": "powershell -ExecutionPolicy Bypass -File scripts/build-captions-windows-ai.ps1",
     "setup:windows-ai-identity": "winapp node add-electron-debug-identity",
     "remove:windows-ai-identity": "winapp node clear-electron-debug-identity",
@@ -24,20 +26,47 @@
   "build": {
     "appId": "com.a2solvex.meetingassistant",
     "productName": "A2solveX Meeting Assistant",
-    "directories": { "output": "dist", "buildResources": "build-resources" },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build-resources"
+    },
     "electronDist": "node_modules/electron/dist",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
+    },
     "files": [
-      "src/**/*",
+      { "from": "build/obf/src", "to": "src", "filter": ["**/*"] },
       "package.json",
       "!node_modules/@phosphor-icons/web/src/{bold,duotone,fill,light,thin}/**"
     ],
     "extraResources": [
-      { "from": "native/captions/target/release/audio-capture.exe", "to": "captions/audio-capture.exe" },
-      { "from": "build/worker-dist/caption-worker", "to": "captions/worker" },
-      { "from": "resources/speech-check.wav", "to": "captions/speech-check.wav" }
+      {
+        "from": "native/captions/target/release/audio-capture.exe",
+        "to": "captions/audio-capture.exe"
+      },
+      {
+        "from": "build/worker-dist/caption-worker",
+        "to": "captions/worker"
+      },
+      {
+        "from": "resources/speech-check.wav",
+        "to": "captions/speech-check.wav"
+      }
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build-resources/icon.png"
     },
     "nsis": {
@@ -46,13 +75,15 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "include": "build-resources/installer.nsh",
       "artifactName": "A2solveX-Meeting-Assistant-Setup-${version}.exe"
     }
   },
   "devDependencies": {
     "@microsoft/winappcli": "^0.7.1",
     "electron": "^44.7.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "javascript-obfuscator": "^4.1.1"
   },
   "dependencies": {
     "@phosphor-icons/web": "^2.1.2"
